@@ -1,0 +1,23 @@
+@CLIBPPA DSECT
+PPAEYE   DS     CL4               00 Eye Catcher
+PPAEYE$  EQU    C'@PPA'           ...
+PPAPREV  DS     A(0)              04 Previous Save Area
+PPANEXT  DS     A(0)              08 Next Save Area
+PPACRT   DS     A(0)              0C C Runtime Library Anchor (Task)
+PPAGRT   DS     A(0)              10 C Runtime Global Anchor (AS)
+PPASAVE  DS     A(0)              14 saved "next" from TCBFSA
+PPATIOT  DS     A                 18 TIOT address
+PPAPSCB  DS     A                 1C PSCB address
+PPAFLAG  DS     X                 20 Processing flags
+PPATSOFG EQU    X'80'             ... TSO foreground environment
+PPATSOBG EQU    X'40'             ... TSO background environment
+PPATIN   EQU    X'08'             ... STDIN is terminal
+PPATOUT  EQU    X'04'             ... STDOUT is terminal
+PPATERR  EQU    X'02'             ... STDERR is terminal
+PPASUBPL DS     X                 21 save area subpool number
+         DS     2X                22 unused / available
+PPASTKLN DS     F                 24 stack area length
+PPAEXITA DS     A(0)              28 EXITA entry point address
+         DS     F                 2C unused / available
+         DS     0D                force double word alignment
+CLIBPPA  EQU    @CLIBPPA,*-@CLIBPPA

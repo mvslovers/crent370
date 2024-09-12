@@ -1,0 +1,22 @@
+         MACRO                                                          00000100
+&N       PDPEPIL                                                        00000200
+         GBLC  &FUNC                                                    00000301
+         GBLB  &PDFEPIL                                                 00000400
+         AIF   (&PDFEPIL).ONCED                                         00000500
+&PDFEPIL SETB  1                                                        00000600
+         PRINT OFF                                                      00000702
+*                                                                       00000800
+* THE STANDARD GCC EXIT CODE MACRO                                      00000900
+* BY CHRIS LANGFORD AND DAVE JONES                                      00001000
+* AUGUST, 2006                                                          00001100
+*                                                                       00001200
+* THIS CODE IS IN THE PUBLIC DOMAIN AND CAN BE USED WITHOUT             00001300
+* RESTRICTION IN ANY APPLICATION, EITHER COMMERCIAL OR NON-COMMERICAL,  00001400
+* AND CAN BE FREELY REDISTRIBUTED.                                      00001500
+*                                                                       00001600
+         PRINT ON                                                       00001702
+.ONCED   ANOP  ,                                                        00001800
+&N       L     13,4(,13)                                                00001900
+         RETURN (14,12),RC=(15)                                         00002000
+&FUNC    SETC ''                                                        00002101
+         MEND                                                           00002200

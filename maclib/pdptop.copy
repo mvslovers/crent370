@@ -1,0 +1,90 @@
+         PRINT OFF
+**********************************************************************
+*                                                                    *
+*  This macro was written by Paul Edwards                            *
+*  Released to the public domain                                     *
+*                                                                    *
+**********************************************************************
+**********************************************************************
+*                                                                    *
+*  PDPTOP - standard code for the start of every assembler file.     *
+*                                                                    *
+*  (version customized for S/370 - see PDPTOP/PDPORIG for original)  *
+*                                                                    *
+**********************************************************************
+         GBLC &FUNC               Function long name for SAVE
+*
+* Is the GCC or C/370 calling convention being used?
+*
+         GBLC &COMP               Declare compiler switch
+*
+* What system are the compiles being done for?
+*
+         GBLC &SYS                Declare variable for system
+*
+* Which OS are we targetting?
+*
+         GBLC &OS                 Declare compiler switch
+*
+* Are PUTs done in locate or move mode?
+*
+         GBLC &OUTM
+*
+*
+*
+&COMP    SETC 'GCC'               Indicate that this is for GCC
+* &COMP    SETC 'C370'            Indicate that this is for C/370
+&SYS     SETC 'S370'              Define either S370, S380 or S390
+&OUTM    SETC 'M'                 Indicate move mode
+* &OUTM    SETC 'L'               Indicate locate mode
+&OS      SETC 'UNKNOWN'           Indicate that the OS is not known
+* &OS      SETC 'MVS'             Indicate that this is for MVS
+* &OS      SETC 'MUSIC'           Indicate that this is for MUSIC/SP
+*
+* AMODE/RMODE not available on S370. In the S/370 model,
+* everything is 24-bit so these considerations are not
+* important.
+*
+*        AMODE ANY
+*        RMODE ANY
+*
+R0       EQU  0
+R1       EQU  1
+R2       EQU  2
+R3       EQU  3
+R4       EQU  4
+R5       EQU  5
+R6       EQU  6
+R7       EQU  7
+R8       EQU  8
+R9       EQU  9
+R10      EQU  10
+R11      EQU  11
+R12      EQU  12
+R13      EQU  13
+R14      EQU  14
+R15      EQU  15
+*
+DSA      DSECT
+DSAFLAGS DS   F                 00 +0  unused/available
+DSAPREV  DS   F                 04 +4  chain previous DSA/SAVEAREA
+DSANEXT  DS   F                 08 +8  chain next DSA/SAVEAREA
+DSAR14   DS   F                 0C +12 callers R14
+DSAR15   DS   F                 10 +16 callers R15
+DSAR0    DS   F                 14 +20 callers R0
+DSAR1    DS   F                 18 +24 callers R1
+DSAR2    DS   F                 1C +28 callers R2
+DSAR3    DS   F                 20 +32 callers R3
+DSAR4    DS   F                 24 +36 callers R4
+DSAR5    DS   F                 28 +40 callers R5
+DSAR6    DS   F                 2C +44 callers R6
+DSAR7    DS   F                 30 +48 callers R7
+DSAR8    DS   F                 34 +52 callers R8
+DSAR9    DS   F                 38 +56 callers R9
+DSAR10   DS   F                 3C +60 callers R10
+DSAR11   DS   F                 40 +64 callers R11
+DSAR12   DS   F                 44 +68 callers R12
+DSALWA   DS   F                 48 +72 language work area
+DSANAB   DS   F                 4C +76 next available byte
+*
+         PRINT ON

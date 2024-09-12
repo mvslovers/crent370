@@ -1,0 +1,9 @@
+@CLIBJPA DSECT
+JPAEYE   DS     CL8'@@CLIB'       Eye Catcher
+JPACRT   DS     A(0)              C Runtime Library Anchor (Task)
+         DS     A(0)              unused
+         DS     A(0)              unused
+         DS     A(0)              unused
+         DS     A(0)              unused
+         DS     A(0)              unused
+CLIBJPA  EQU    @CLIBJPA,*-@CLIBJPA

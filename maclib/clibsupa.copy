@@ -1,0 +1,135 @@
+***********************************************************************
+*                                                                     *
+*  The work area includes both a register save area and various       *
+*  variables used by the different routines.                          *
+*                                                                     *
+***********************************************************************
+DUMMY    DSECT ,
+* CAMDUM CAMLST SEARCH,DSNAME,VOLSER,DSCB+44
+ZCAMDUM  CAMLST SEARCH,*-*,*-*,*-*
+ZCAMLEN  EQU   *-ZCAMDUM          Length of CAMLST Template
+ZBSAMDCB DCB   MACRF=(RP,WP),DSORG=PS,DDNAME=BSAMDCB, input and output *
+               EXLST=1-1          JFCB and DCB exits added later
+BSAMDCBZ EQU   *-ZBSAMDCB
+ZQSAMDCB DCB   MACRF=P&OUTM.M,DSORG=PS,DDNAME=QSAMDCB
+QSAMDCBZ EQU   *-ZQSAMDCB
+ZENDFILE LA    R6,1               Indicate @@AREAD reached end-of-file
+         LNR   R6,R6              Make negative
+         BR    R14                Return to instruction after the GET
+ZEOFRLEN EQU   *-ZENDFILE
+
+WORKAREA DSECT
+SAVEAREA DS    18F
+DWORK    DS    D                  Extra work space
+WWORK    DS    D                  Extra work space
+DWDDNAM  DS    D                  Extra work space
+WORKLEN  EQU   *-WORKAREA
+JFCB     DS    0F
+         IEFJFCBN LIST=YES        Job File Control Block
+CAMLST   DS    XL(ZCAMLEN)        CAMLST for OBTAIN to get VTOC entry
+* Format 1 Data Set Control Block
+*   N.B. Current program logic does not use DS1DSNAM, leaving 44 bytes
+*     of available space
+         IECSDSL1 1               Map the Format 1 DSCB
+DSCBCCHH DS    CL5                CCHHR of DSCB returned by OBTAIN
+         DS    CL47               Rest of OBTAIN's 148 byte work area
+OPENLEN  EQU   *-WORKAREA         Length for @@AOPEN processing
+         SPACE 2
+***********************************************************************
+*                                                                     *
+* ZDCBAREA - the address of this memory is used by the C caller       *
+* as a "handle". The block of memory has different contents depending *
+* on what sort of file is being opened, but it will be whatever the   *
+* assembler code is expecting, and the caller merely needs to         *
+* provide the handle (returned from AOPEN) in subsequent calls so     *
+* that the assembler can keep track of things.                        *
+*                                                                     *
+*   FILE ACCESS CONTROL BLOCK (N.B.-STARTS WITH DCBD DUE TO DSECT)    *
+*   CONTAINS DCB, DECB, JFCB, DSCB 1, BUFFER POINTERS, FLAGS, ETC.    *
+*                                                                     *
+***********************************************************************
+         DCBD  DSORG=PS,DEVD=(DA,TA)   Map Data Control Block
+         ORG   IHADCB             Overlay the DCB DSECT
+ZDCBAREA DS    0H
+         DS    CL(BSAMDCBZ)
+         READ  DECB,SF,IHADCB,2-2,3-3,MF=L  READ/WRITE BSAM
+         ORG   IHADCB             Only using one DCB
+         DS    CL(QSAMDCBZ)         so overlay this one
+         ORG   IHADCB             Only using one DCB
+TAPEDCB  DCB   DDNAME=TAPE,MACRF=E,DSORG=PS,REPOS=Y,BLKSIZE=0,         *
+               DEVD=TA                 LARGE SIZE
+         ORG   TAPEDCB+84    LEAVE ROOM FOR DCBLRECL
+ZXCPVOLS DC    F'0'          VOLUME COUNT
+TAPECCW  CCW   1,3-3,X'40',4-4
+         CCW   3,3-3,X'20',1
+TAPEXLEN EQU   *-TAPEDCB     PATTERN TO MOVE
+TAPEECB  DC    A(0)
+TAPEIOB  DC    X'42,00,00,00'
+         DC    A(TAPEECB)
+         DC    2A(0)
+         DC    A(TAPECCW)
+         DC    A(TAPEDCB)
+         DC    2A(0)
+         SPACE 1
+         ORG   IHADCB
+ZPUTLINE PUTLINE MF=L        PATTERN FOR TERMINAL I/O
+*DSECT*  IKJIOPL ,
+         SPACE 1
+ZIOPL    DS    0A            MANUAL EXPANSION TO AVOID DSECT
+IOPLUPT  DS    A        PTR TO UPT
+IOPLECT  DS    A        PTR TO ECT
+IOPLECB  DS    A        PTR TO USER'S ECB
+IOPLIOPB DS    A        PTR TO THE I/O SERVICE RTN PARM BLOCK
+ZIOECB   DS    A                   TPUT ECB
+ZIOECT   DS    A                   ORIGINATING ECT
+ZIOUPT   DS    A                   UPT
+ZIODDNM  DS    CL8      DD NAME AT OFFSET X'28' FOR DCB COMPAT.
+ZGETLINE GETLINE MF=L             TWO WORD GTPB
+         ORG   ,
+OPENCLOS DS    A                  OPEN/CLOSE parameter list
+DCBXLST  DS    2A                 07 JFCB / 85 DCB EXIT
+EOFR24   DS    CL(ZEOFRLEN)
+         AIF   ('&SYS' EQ 'S370').NOD24  If S/370, no 24-bit OPEN exit
+         DS    0H
+DOPE24   DS    CL(DOPELEN)        DCB open 24-bit code
+DOPE31   DS    A                  Address of DCB open exit
+.NOD24   ANOP  ,
+ZBUFF1   DS    A,F                Address, length of buffer
+ZBUFF2   DS    A,F                Address, length of 2nd buffer
+KEPTREC  DS    A,F                Address & length of saved rcd
+*
+BLKSIZE  DS    F                  Save area for input DCB BLKSIZE
+LRECL    DS    F                  Save area for input DCB LRECL
+BUFFADDR DS    A     1/3          Location of the BLOCK Buffer
+BUFFCURR DS    A     2/3          Current record in the buffer
+BUFFEND  DS    A     3/3          Address after end of current block
+VBSADDR  DS    A                  Location of the VBS record build area
+VBSEND   DS    A                  Addr. after end VBS record build area
+         SPACE 1
+ZWORK    DS    D             Below the line work storage
+DEVINFO  DS    2F                 UCB Type / Max block size
+MEMBER24 DS    CL8
+RECFMIX  DS    X             Record format index: 0-F 4-V 8-U
+IOMFLAGS DS    X             Remember open MODE
+IOFOUT   EQU   X'01'           Output mode
+IOFEXCP  EQU   X'08'           Use EXCP for TAPE
+IOFBLOCK EQU   X'10'           Using BSAM READ/WRITE mode
+IOFUREC  EQU   X'40'           DEVICE IS UNIT RECORD
+IOFTERM  EQU   X'80'           Using GETLINE/PUTLINE
+IOPFLAGS DS    X             Remember prior events
+IOFKEPT  EQU   X'01'           Record info kept
+IOFCONCT EQU   X'02'           Reread - unlike concatenation
+IOFDCBEX EQU   X'04'           DCB exit entered
+IOFCURSE EQU   X'08'           Write buffer recursion
+IOFLIOWR EQU   X'10'           Last I/O was Write type
+IOFLDATA EQU   X'20'           Output buffer has data
+IOFLSDW  EQU   X'40'           Spanned record incomplete
+IOFLEOF  EQU   X'80'           Encountered an End-of-File
+FILEMODE DS    X             AOPEN requested record format dftl
+FMFIX    EQU   0               Fixed RECFM (blocked)
+FMVAR    EQU   1               Variable (blocked)
+FMUND    EQU   2               Undefined
+ZRECFM   DS    X             Equivalent RECFM bits
+ZIOSAVE2 DS    18F           Save area for physical write
+SAVEADCB DS    18F                Register save area for PUT
+ZDCBLEN  EQU   *-ZDCBAREA

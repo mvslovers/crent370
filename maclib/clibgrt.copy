@@ -1,0 +1,28 @@
+*
+* Keep CLIBGRT.COPY sync'd with CLIBGRT.H
+*
+@CLIBGRT DSECT
+GRTEYE   DS    CL8                   Eye catcher for dumps 'CLIBGRT'
+GRTCLIBL DS    H                     Length of CLIBGRT
+GRTFLAG1 DS    X                     flags
+         DS    X                     unused
+GRTTMPNM DS    F                     tmpnam() counter
+GRTEXIT  DS    A                     array of atexit() functions
+GRTEXITA DS    A                     array of on_exit() args
+GRTFILE  DS    A                     open FILE handle array
+GRTSOCK  DS    A                     open sockets array
+GRTENV   DS    A                     environment variables array
+GRTIN    DS    A                     stdin file handle
+GRTOUT   DS    A                     stdout file handle
+GRTERR   DS    A                     stderr file handle
+GRTCOM   DS    A                     console communication
+GRTAPP1  DS    A                     for use by applications
+GRTAPP2  DS    A                     for use by applications
+GRTAPP3  DS    A                     for use by applications
+GRTCTHRD DS    A                     CTHDTASK array
+GRTWSA   DS    A                     writable static array
+GRTDEVTB DS    A                     device array
+GRTPTRS  DS    A                     pointer passed in via argv
+*
+         DS    0D                    align to double word
+CLIBGRT  EQU   @CLIBGRT,*-@CLIBGRT

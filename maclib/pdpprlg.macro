@@ -1,0 +1,42 @@
+         MACRO                                                          00000100
+&N       PDPPRLG &CINDEX=,&FRAME=,&BASER=,&ENTRY=                       00000200
+         GBLC  &FUNC                                                    00000301
+         GBLB  &PDFPRLG                                                 00000400
+         AIF   (&PDFPRLG).ONCED                                         00000500
+&PDFPRLG SETB  1                                                        00000600
+         PRINT OFF                                                      00000702
+*                                                                       00000800
+* THE STANDARD GCC ENTRY PROLOG MACRO                                   00000900
+* BY CHRIS LANGFORD AND DAVE JONES                                      00001000
+* AUGUST, 2006                                                          00001100
+*                                                                       00001200
+* THIS CODE IS IN THE PUBLIC DOMAIN AND CAN BE USED WITHOUT             00001300
+* RESTRICTION IN ANY APPLICATION, EITHER COMMERCIAL OR NON-COMMERICAL,  00001400
+* AND CAN BE FREELY REDISTRIBUTED.                                      00001500
+*                                                                       00001600
+         PRINT ON                                                       00001702
+.ONCED   AIF   ('&ENTRY' EQ 'NO').NENT                                  00001800
+*                                                                       00001900
+         ENTRY &N                                                       00002000
+.NENT    ANOP                                                           00002100
+&N       DS    0H                                                       00002200
+         USING *,&BASER                                                 00002300
+         AIF   ('&FUNC' NE '').LNAME                                    00002401
+         SAVE  (14,12),,&N                                              00002500
+         AGO   .BASEREG                                                 00002600
+.LNAME   ANOP                                                           00002700
+         SAVE  (14,12),,&FUNC                                           00002801
+.BASEREG ANOP                                                           00002900
+         LA    &BASER,0(,15)                                            00003000
+         L     15,76(,13)                                               00003100
+         ST    13,4(,15)                                                00003200
+         ST    15,8(,13)                                                00003300
+         LR    13,15                                                    00003400
+         AIF   ('&FRAME' EQ '' OR '&FRAME' EQ '0').COMNUM               00003500
+         AIF   (T'&FRAME NE 'N').NONNUM                                 00003600
+         AIF   (&FRAME GE 4096).NONNUM                                  00003700
+         LA    15,&FRAME.(,15)                                          00003800
+         AGO   .COMNUM                                                  00003900
+.NONNUM  A     15,=A(&FRAME)                                            00004000
+.COMNUM  ST    15,76(13)                                                00004100
+         MEND                                                           00004200

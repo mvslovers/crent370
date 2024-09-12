@@ -1,0 +1,37 @@
+*
+* Keep CLIBCRT.COPY sync'd with CLIBCRT.H
+*
+@CLIBCRT DSECT
+CRTEYE   DS    CL8                   Eye catcher for dumps
+CRTTCBU  DS    A                     old TCBUSER value
+CRTSAVE  DS    A                     first save area address
+CRTACEE  DS    A                     ACEE for this task/thread
+CRTSEED  DS    F                     seed for rand()/srand()
+CRTCTIME DS    CL28                  result for asctime()
+CRTTZOFF DS    F                     time zone offset (-west|+east)
+CRTSTIME DS    A                     STIMER exit plist
+CRTCLIBL DS    F                     length of CLIBCRT area
+CRTHOSTE DS    10F                   hostent areas for DYN75
+CRTHOSTN DS    CL80                  host name for DYN75
+CRTESTCT DS    F                     ESTAE stack count
+CRTESTPL DS    20F                   ESTAE parameter list
+CRTOPTS  DS    X                     copy of JFCBOPTS at startup
+CRTAUTH  DS    X                     flags for @@AUTH
+         DS    2X                    unused
+CRTERRNO DS    F                     error number
+CRTSTRTK DS    A                     used by strtok for "old" ptr
+CRTGRT   DS    A                     A(global C runtime anchor)
+CRTTMPNM DS    CL12                  tmpnam() buffer
+CRTTMS   DS    CL36                  struct tm for gmtime()
+CRTPUSH  DS    A                     push/pop function array
+CRTARGS  DS    A                     push/pop arg array
+CRTMUTX  DS    A                     mutex cleanup array
+CRTAPP1  DS    A                     application use #1
+CRTAPP2  DS    A                     application use #2
+CRTUFS   DS    A                     Unix "like" File System
+         DS    F                     unused/available
+CRTNTOA  DS    CL16                  "nnn.nnn.nnn.nnn" xxxx_ntoa()
+CRTTRYRC DS    F                     return/abend code from try()
+CRTAVAIL DS    3F                    unused/available
+         DS    0D                    align to double word
+CLIBCRT  EQU   @CLIBCRT,*-@CLIBCRT

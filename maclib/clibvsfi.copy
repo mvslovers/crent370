@@ -1,0 +1,38 @@
+@VSFILE  DSECT
+VSEYE    DS    CL8                  00 eye catcher for dumps
+VSDDNAME DS    CL8                  08 DD Name
+VSZERO   DS    X                    10 zero byte
+VSFLAGS  DS    X                    11 flags
+VSOPEN   EQU   X'80'                ... VSAM cluster is open
+VSSTRTGE EQU   X'40'                ... start greater than or equal
+VSWRITE  EQU   X'20'                ... write record
+VSERROR  EQU   X'02'                ... Error has occured
+VSEOF    EQU   X'01'                ... EOF has occured
+*
+VSRC     DS    X                    12 VSAM return code
+VSRSN    DS    X                    13 VSAM reason code
+VSCOMP   DS    X                    14 VSAM component
+VSTYPE   DS    X                    15 VSTYPE
+VSKSDS   EQU   0                    ... keyed sequential dataset
+VSESDS   EQU   1                    ... entry sequenced dataset
+VSRRDS   EQU   2                    ... relative record number
+*
+VSACCESS DS    X                    16 VSACCESS
+VSDIR    EQU   0                    ... direct access
+VSSEQ    EQU   1                    ... sequential access
+VSDYNAM  EQU   2                    ... dynamic access
+*
+VSMODE   DS    X                    17 VSMODE
+VSIN     EQU   0                    ... input (read only)
+VSOUT    EQU   1                    ... output (write only)
+VSUPD    EQU   2                    ... update (read and write)
+*
+         IFGACB DSECT=NO            18 Access Control Block
+$ACBLEN  EQU   *-IFGACB
+VSAVAIL  DS    F                    64 Available
+         IFGRPL DSECT=NO            68 Request Parameter List
+$RPLLEN  EQU   *-IFGRPL
+         DS    0D                   Align to double word
+VSSELF   DS    A                    B8 pointer to self, used in __vserr
+VSRESET  DS    A                    BC reset function called by __vserr
+VSFILE   EQU   @VSFILE,*-@VSFILE

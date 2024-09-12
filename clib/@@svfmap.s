@@ -1,0 +1,82 @@
+ TITLE '/home/mike/repos/crent370/clib/@@svfmap.c'
+         COPY  PDPTOP
+         CSECT
+* GNU C version 3.2.3 - c2asm370 version 1.0 (mvs)
+*        compiled by GNU C version 13.2.0.
+*
+* options passed:  -lang-c -I. -I/home/mike/repos/crent370/include
+* -iprefix -D__GNUC__=3 -D__GNUC_MINOR__=2 -D__GNUC_PATCHLEVEL__=3
+* -D__GXX_ABI_VERSION=102 -D__GCC__ -D__MVS__ -D__GCC__ -D__MVS__
+* -Asystem=mvs -Acpu=i370 -Amachine=i370 -D__OPTIMIZE__
+* -D__STDC_HOSTED__=1 -trigraphs -O1 -fverbose-asm
+* 
+* options enabled:  -fdefer-pop -fthread-jumps -fpeephole
+* -ffunction-cse -fkeep-static-consts -fpcc-struct-return -fgcse-lm
+* -fgcse-sm -fsched-interblock -fsched-spec -fbranch-count-reg
+* -fcprop-registers -fcommon -fverbose-asm -fgnu-linker
+* -fargument-alias -fmerge-constants -fident
+* -fguess-branch-probability -fmath-errno -ftrapping-math
+* -mchar-instructions -mno-pickax -mno-constants-first
+*
+         
+&FUNC    SETC 'ssvt_funcmap'
+* Program text area
+         DS    0F
+         EJECT
+* external function 'ssvt_funcmap' prologue
+* frame base=88, local stack=0, call args=0
+&FUNC    SETC  'ssvt_funcmap'
+@@SVFMAP PDPPRLG CINDEX=0,FRAME=88,BASER=12,ENTRY=YES
+         B     @@FEN0
+         LTORG
+@@FEN0   EQU   *
+         DROP  12
+         BALR  12,0
+         USING *,12
+@@PG0    EQU   *
+         LR    11,1
+         L     10,=A(@@PGT0)
+* Function 'ssvt_funcmap' code
+         L     4,0(11) ==> ssvt
+         L     5,4(11) ==> index
+         L     3,8(11) ==> funcnum
+         SLR   6,6 ==> restore
+         LA    15,1(0,0)
+         LTR   4,4 ==> ssvt
+         BE    @@L1
+         LA    15,1(0,0)
+         LA    2,256(0,0)
+         CLR   5,2 ==> index
+         BH    @@L1
+         LA    15,1(0,0)
+         LTR   3,3 ==> funcnum
+         BE    @@L1
+         LA    15,1(0,0)
+         LA    2,256(0,0)
+         CLR   3,2 ==> funcnum
+         BH    @@L1
+         BCTR  3,0 ==> funcnum
+         IPK   0             get psw key in R2
+         LR    15,2           save psw key in register ==> prevkey
+         CLM   15,1,=XL1'00' ==> prevkey
+         BE    @@L6
+         LA    6,1(0,0) ==> restore
+         SLR   2,2               PSW key 0 value
+         SPKA  0(2)             save in psw
+@@L6     EQU   *
+         STC   5,4(3,4) ==> index,ssvtfcod
+         LTR   6,6 ==> restore
+         BE    @@L7
+         LR    2,15               get prev psw key ==> prevkey
+         SPKA  0(2)             save in psw
+@@L7     EQU   *
+@@L1     EQU   *
+* Function 'ssvt_funcmap' epilogue
+         PDPEPIL
+* Function 'ssvt_funcmap' literal pool
+         DS    0D
+         LTORG
+* Function 'ssvt_funcmap' page table
+@@PGT0   DS    0F
+         DC    A(@@PG0)
+         END
