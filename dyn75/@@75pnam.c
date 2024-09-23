@@ -19,11 +19,11 @@ getpeername(int ss, struct sockaddr *addr, int *addrlen)
         /* do we have this socket in our cache? */
         if (__sofind(ss,&s)) {
             /* yes, do we have socket name? */
-            if (s && memcmp(s->name, "\x00\x00\x00\x00", 4)!= 0) {
+            if (s && memcmp(s->peer, "\x00\x00\x00\x00", 4)!= 0) {
                 /* yes, return cached name */
                 int len = addrlen ? *addrlen : sizeof(*addr);
-                if (len > sizeof(s->name)) len = sizeof(s->name);
-                memcpy(addr, s->name, len);
+                if (len > sizeof(s->peer)) len = sizeof(s->peer);
+                memcpy(addr, s->peer, len);
                 goto quit;
             }
         }

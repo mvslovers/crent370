@@ -53,8 +53,14 @@ accept(int ss, struct sockaddr_in *name, int *length)
         /* get the local socket name (address and port) */
         __75snam(rc, &addr, &addrlen);
 
-        /* save new socket, local and remote information */
-        __soadd(rc, &addr, name);   /* socket, local, remote */
+        /* save new socket, local information */
+        __soadd(rc, &addr, 0);   /* socket, local, NULL */
+        
+        /* get the peer name */
+        __75pnam(rc, &addr, &addrlen);
+
+        /* update socket, peer information */
+        __soupd(rc, 0, &addr);   /* socket, NULL, peer */
     }
 
     if (rc==-1) {
