@@ -308,12 +308,10 @@ struct rpl {
 #define RPLEXRS             0x34    /* ... EXCEPTION RESPONSE RECEIVED(VTAM)*/
 #define RPLNOIN             0x38    /* ... NO INPUT AVAILABLE(VTAM)         */
 #define RPLVABND            0x3C    /* ... VTAM ENCOUNTERED ABEND CONDITION */
-        };
-    };
 
-    union {
-        unsigned char   rplcmpon;   /* 0E COMPONENT ISSUING CODE(VSAM)      */
-        unsigned char   rplfdb2;    /* 0E REASON CODE(VTAM)                 */
+            union {
+            unsigned char rplcmpon; /* 0E COMPONENT ISSUING CODE(VSAM)      */
+            unsigned char rplfdb2;  /* 0E REASON CODE(VTAM)                 */
 #define RPLERLK             0x80    /* ... ERROR LOCK SET                   */
 #define RPLRVID             0x40    /* ... RVI RECEIVED                     */
 #define RPLATND             0x20    /* ... ATTN RECEIVED                    */
@@ -322,11 +320,11 @@ struct rpl {
 #define RPLDLGFL            0x04    /* ... DIALOG INIT FAILED               */
 #define RPLCUERR            0x02    /* ... CONTROL UNIT FAILURE             */
 #define RPLSTSAV            0x01    /* ... SENSE BYTES PRESENT              */
-    };
+            };  /* union 0E */
 
-    union {
-        unsigned char   rplerrcd;   /* 0F ERROR CODE(VSAM)                  */
-        unsigned char   rplfdb3;    /* 0F DATA FLAGS(VTAM)                  */
+            union {
+            unsigned char rplerrcd; /* 0F ERROR CODE(VSAM)                  */
+            unsigned char rplfdb3;  /* 0F DATA FLAGS(VTAM)                  */
 #define RPLUINPT            0x80    /* ... UNSOLICITED INPUT                */
 #define RPLSV32             0x40    /* ... RESERVED                         */
 #define RPLREOB             0x20    /* ... END OF BLOCK                     */
@@ -335,7 +333,9 @@ struct rpl {
 #define RPLLGFRC            0x04    /* ... LOGOFF DETECTED                  */
 #define RPLRLG              0x02    /* ... LEADING GRAPHICS RECEIVED        */
 #define RPLRDSOH            0x01    /* ... START OF HEADER (SOH) RECEIVED   */
-    };
+            };  /* union 0F */
+        };  /* struct 0C */
+    };  /* union 0C */
 
     union {
         unsigned short  rplkeyle;   /* 10 KEY LENGTH (PROC=GEN)             */
