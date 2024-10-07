@@ -201,6 +201,9 @@ extern int  __txterm(TXT99 ***txt99, const char *unused);
 extern int  __txperm(TXT99 ***txt99, const char *unused);
 
 /* __txunal() - unallocate */
-extern int	__txunal(TXT99 ***txt99, const char *unused);
+extern int  __txunal(TXT99 ***txt99, const char *unused);
+
+/* __txclos() - unallocate on close */
+extern int  __txclos(TXT99 ***txt99, const char *unused);
 
 #endif

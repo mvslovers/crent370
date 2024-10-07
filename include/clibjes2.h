@@ -5,6 +5,7 @@
 #include <time64.h>
 #include "clibcp.h"                 /* JES Checkpoint prototypes            */
 #include "clibjs.h"                 /* JES Spool prototypes                 */
+#include "clibvsam.h"               /* needed for jesir*()                  */
 #include <iefssso.h>                /* needed for jesxwrtr()                */
 
 typedef struct jes      JES;        /* JES handle                           */
@@ -156,5 +157,8 @@ int jesxwrtr(SSSO *ssso, const char *class_list, const char *dest, const char *f
 /* jesxdone() - tell jes we're done with sysout processing */
 int jesxdone(SSSO *ssso);
 
+int jesiropn(VSFILE **vsfile);
+int jesirput(VSFILE  *vsfile, char card[80]);
+int jesircls(VSFILE  *vsfile);
 #endif
 

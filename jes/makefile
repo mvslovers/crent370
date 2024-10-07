@@ -10,6 +10,9 @@ CFLAGS := -S $(INC1) $(INC2)
 C_FILES := jescanj.c \
 	jesclose.c \
 	jesdelj.c \
+	jesiropn.c \
+	jesirput.c \
+	jesircls.c \
 	jesjob.c \
 	jesjobf1.c \
 	jesjobfr.c \
@@ -45,12 +48,6 @@ all: $(S_FILES) $(O_FILES)
 
 # build object files from the generated assembler files (.s)
 %.o: %.s
-	@echo "mvsasm $(notdir $<)"
-	@mvsasm "$<"
-	@touch "$@"
-
-# build object files from assembler files (.asm)
-%.o: %.asm
 	@echo "mvsasm $(notdir $<)"
 	@mvsasm "$<"
 	@touch "$@"

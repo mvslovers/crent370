@@ -183,6 +183,7 @@ C_FILES := abort.c \
 	@@inaton.c \
 	@@inc.c \
 	initssob.c \
+	@@irallc.c \
 	isalnum.c \
 	isalpha.c \
 	@@isauth.c \
@@ -407,6 +408,7 @@ C_FILES := abort.c \
 	@@txbufn.c \
 	@@txbufo.c \
 	@@txcat.c \
+	@@txclos.c \
 	@@txcopy.c \
 	@@txcyl.c \
 	@@txddn.c \
