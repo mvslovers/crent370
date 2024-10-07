@@ -1,6 +1,5 @@
 /* MEMSET.C */
 #include <stdio.h>
-#include <string.h>
 #include <stddef.h>
 
 #define USE_ASSEMBLER
