@@ -248,6 +248,7 @@ C_FILES := abort.c \
 	memcpy.c \
 	memcpyp.c \
 	memmove.c \
+	memset.c \
 	mktime.c \
 	modf.c \
 	@@mtd.c \
