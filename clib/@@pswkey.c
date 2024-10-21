@@ -7,7 +7,7 @@ int __pswkey(unsigned char *savekey)
 {
     int     rc  = 0;
 
-    if (!__auth()) return EPERM;    /* operation not permitted  */
+    if (!__isauth()) return EPERM;    /* operation not permitted  */
 
     if (__issup()) {
         /* get current PSW key */
