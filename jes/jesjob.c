@@ -15,7 +15,7 @@ static int process_intxt(JES *jes, __JQE *jqe, __JCT *jct, unsigned pddb_mttr, J
 static int process_job(char *buf, char *jobname, char *userid);
 static JESDD *process_pddb(__PDDB *pddb, JESJOB *job);
 static int process_exec(char *buf, char *stepname, char *procname, char *program);
-static int process_dd(char *buf, char *ddname, char *dsname, char *sysout, unsigned *sysin);
+static int process_dd(char *buf, char *eob, char *ddname, char *dsname, char *sysout, unsigned *sysin);
 static int process_sysout(JESDD **jesdd, const char *ddname, const char *dsname, const char *sysout, const char *stepname, const char *procstep);
 static int process_sysin(JESDD **jesdd, const char *ddname, const char *dsname, const char *stepname, const char *procstep);
 static int is_dup_dsid(JESDD **jesdd, unsigned dsid);
@@ -137,7 +137,7 @@ JESJOB **jesjob(JES *jes, const char *filter, JESFILT type, int dd)
         }
 
         /* add this JESJOB to the array of JESJOBs */
-        arrayadd(&array, job);
+        arrayadd(&array, job); 
         strcpy(job->eye, JESJOB_EYE);
 
         /* Fill in the job info from the JQE and JCT records */
@@ -472,8 +472,8 @@ process_intxt(JES *jes, __JQE *jqe, __JCT *jct, unsigned pddb_mttr, JESJOB *job)
                 process_exec(p, stepname, procstep, program);
                 break;
             case DDSTR:         /* ... DD STATEMENT TEXT STRING             */
-                /* wtodumpf(pre, pre->STRLTH, "DD Text String"); */
-                process_dd(p, ddname, dsname, sysout, &sysin);
+                /* wtodumpf(pre, pre->STRLTH, "%s: DD Text String", __func__); */
+                process_dd(p, p+pre->STRLTH, ddname, dsname, sysout, &sysin);
                 /* wtof("ddname=%s, dsname=%s, sysout=%s, sysin=%u", ddname, dsname, sysout, sysin); */
                 if (sysout[0]) {
                     /* DD is for SYSOUT */
@@ -594,7 +594,7 @@ process_exec(char *buf, char *stepname, char *procname, char *program)
 
 __asm__("\n&FUNC    SETC 'process_dd'");
 static int
-process_dd(char *buf, char *ddname, char *dsname, char *sysout, unsigned *sysin)
+process_dd(char *buf, char *eob, char *ddname, char *dsname, char *sysout, unsigned *sysin)
 {
     __DDSTR     *dd     = (__DDSTR*)buf;
     TEXT        *t;
@@ -607,7 +607,7 @@ process_dd(char *buf, char *ddname, char *dsname, char *sysout, unsigned *sysin)
     sysout[0]   = 0;
     *sysin      = 0;
 
-    for(t = (TEXT*)buf; t->key != 0 && t->key != ENDK; t = (TEXT*)buf) {
+    for(t = (TEXT*)buf; t->key != 0 && t->key != ENDK && buf < eob; t = (TEXT*)buf) {
 #if 0
         char *p = buf;
         for(p+=2, n=0; n < t->count; n++) p += (1 + p[0]);
