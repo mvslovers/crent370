@@ -594,7 +594,19 @@ C_FILES := abort.c \
 	tsocmdf.c \
 	@@ispexe.c \
 	@@isplnk.c \
-	@@ispsel.c
+	@@ispsel.c \
+    @@gtdsab.c \
+    @@nxdsab.c \
+    @@listal.c \
+    testdsab.c \
+    @@txacat.c \
+    @@txadel.c \
+    @@txakee.c \
+    @@txauca.c \
+    @@dsalc.c \
+    @@dsalcf.c \
+    @@dsfree.c \
+    @@freeal.c
 
 # depricated:
 #	clib.c \

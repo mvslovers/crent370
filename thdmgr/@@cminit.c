@@ -149,6 +149,8 @@ dispatch_thread_timed_wait(CTHDMGR *mgr, int quiesce, int pending, int timer)
 {
     int                 rc          = 0;
     unsigned            timeout;  			/* 100 = 1 second */
+    unsigned            n;
+    unsigned            count;
 
 	if (quiesce) {
 		/* server is shutting down */
@@ -161,8 +163,25 @@ dispatch_thread_timed_wait(CTHDMGR *mgr, int quiesce, int pending, int timer)
 		pending = 0;	/* reset the pending flag */
 		timeout = 10;	/* 0.10 seconds */
 
-        /* Create a worker thread if we're less than the max */
-		dispatch_thread_create(mgr);
+        lock(mgr,0);
+        count = array_count(&mgr->worker);
+        rc = 0;
+        for(n=count; n > 0; n--) {
+			CTHDWORK *work = arrayget(&mgr->worker, n);
+			if (!work) continue;
+			if (work->state == CTHDWORK_STATE_INIT ||
+                work->state == CTHDWORK_STATE_WAITING) {
+                /* worker is waiting or initalizing */
+                rc++;
+				break;
+			}
+		}
+        unlock(mgr,0);
+
+        if (!rc) {
+            /* Create a worker thread if we're less than the max */
+            dispatch_thread_create(mgr);
+        }
 		goto wait;
 	}
 
@@ -439,6 +458,7 @@ dispatch_thread_create(CTHDMGR *mgr)
     if (count < mgr->maxtask) {
         /* add a worker task to this thread manager */
         cthread_worker_add(mgr);
+        cthread_yield();
     }
 
     unlock(mgr,0);

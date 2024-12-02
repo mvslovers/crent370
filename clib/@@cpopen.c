@@ -105,7 +105,11 @@ HASPCP *__cpopen(const char *dataset)
     work *= JOESIZE;            /* multiply by length of JOE            */
     work += 4095;               /* prepare to round 4K                  */
     work >>= 12;                /* divide by 4096                       */
+#if 0 /* old code */
     cp->jotblks;                /* number of JOT blocks on checkpoint   */
+#else /* new code */
+    cp->jotblks = work;         /* number of JOT blocks on checkpoint   */
+#endif
 
     /* Allocate buffer for JOT and JQE blocks */
     blocks = cp->jotblks + cp->jqeblks;

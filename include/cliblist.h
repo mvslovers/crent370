@@ -13,6 +13,8 @@ typedef struct ispfstat ISPFSTAT;   /* formatted ISPF statistics        */
 typedef struct loadstat LOADSTAT;   /* formatted Load module statistics */
 typedef struct vollist	VOLLIST;	/* DASD volume list					*/
 
+typedef struct alclist  ALCLIST;    /* dataset allocation list          */
+
 /* DASD volume list */
 struct vollist {
 	char 			volser[7];	/* 00 DASD volume serial				*/
@@ -73,6 +75,17 @@ struct dslist {
     unsigned short  rfjday;     /* last reference julian day            */
     unsigned char   rfmon;      /* last reference month                 */
     unsigned char   rfday;      /* last reference day of month          */
+    
+    /* added for __listal() function */
+    char            disp[4];    /* dataset disp: OLD,NEW,MOD,SHR        */
+};
+
+/* allocation list */
+struct alclist {
+    char            ddname[9];  /* dd name                              */
+    unsigned char   unused[2];  /* unused/available                     */
+    unsigned char   count;      /* number of datasets in dslist array   */
+    DSLIST          **dslist;   /* array of datasets                    */
 };
 
 /* PDS member record */
@@ -296,5 +309,26 @@ extern int      __fmtisp(PDSLIST *pdslist, ISPFSTAT *ispfstat);
 
 /* __fmtloa() - format PDSLIST values into LOADSTAT record */
 extern int      __fmtloa(PDSLIST *pdslist, LOADSTAT *loadstat);
+
+/* __listal() - returns array of ALCLIST records for allocated
+ *              datasets to the task (TCB).
+ *              if tcpptr is NULL current TCB will be used.
+ *              if ddname is NULL all ddnames are returned.
+*/
+extern ALCLIST **__listal(void *tcbptr, const char *ddname, unsigned opt);
+#define __LISTAL_OPT_PERM   0x00000001  /* only perm allocations            */
+#define __LISTAL_OPT_DYNM   0x00000002  /* only dynamic allocations         */
+#define __LISTAL_OPT_CONCAT 0x00000004  /* only concatenated all0cations    */
+#define __LISTAL_OPT_INUSE  0x00000008  /* only in use allocations          */
+#define __LISTAL_OPT_FLG1   0x0000000F  /* relates to dsabflg1 flags        */
+
+#define __LISTAL_OPT_NOCAT  0x00000010  /* on = skip catalog datasets       */
+#define __LISTAL_OPT_NOJES  0x00000020  /* on = skip JESx datasets          */
+
+#define __LISTAL_OPT_DSCB   0x00000100  /* on = get DSCB values for dataset      
+                                           off = use JSCB values for dataset*/
+
+/* __freeal() - free ALCLIST array of allocated datasets */
+extern void     __freeal(ALCLIST ***alclist);
 
 #endif

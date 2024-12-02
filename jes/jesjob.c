@@ -61,6 +61,7 @@ JESJOB **jesjob(JES *jes, const char *filter, JESFILT type, int dd)
     cp = jes->cp;
     hct = &cp->hct;
     /* wtodumpf(hct, sizeof(__HCT), "HCT"); */
+    // wtodumpf(hct->_JQHEADS, sizeof(hct->_JQHEADS), "_JQHEADS");
 
     js = jes->js[0];
 
@@ -80,7 +81,11 @@ JESJOB **jesjob(JES *jes, const char *filter, JESFILT type, int dd)
         if (jqe->JQETYPE == _PURGE) continue;   /* Skip this JQE    */
 
         /* read this jobs JCT record */
-        if (spool_read(js, jqe->JQETRAK, jctbuf, hct->_BUFSIZE)) continue;
+        if (spool_read(js, jqe->JQETRAK, jctbuf, hct->_BUFSIZE)) {
+            // wtof("%s: spool_read(%-8.8s) failed for track %p", __func__, jqe->JQEJNAME, jqe->JQETRAK);
+            continue;
+        }
+        
         jct = (__JCT*)jctbuf;
 
         /* wtodumpf(jct, sizeof(__JCT), "JCT mttr=%08X", jqe->JQETRAK); */
@@ -144,7 +149,6 @@ JESJOB **jesjob(JES *jes, const char *filter, JESFILT type, int dd)
         strcpyp(job->jobname, sizeof(job->jobname), jobname, 0);
         strcpyp(job->jobid,   sizeof(job->jobid),   jobid,   0);
         strcpyp(job->owner,   sizeof(job->owner),   owner,   0);
-
         job->eclass     = jct->JCTCLASS;
         job->priority   = jct->JCTPRIO;
         job->q_type     = jqe->JQETYPE;
@@ -158,13 +162,13 @@ JESJOB **jesjob(JES *jes, const char *filter, JESFILT type, int dd)
 
         if (dd) {
             /* Process the IOT */
-            /* wtof("%s process the IOT", __func__); */
+            // wtof("%s process the IOT %p", __func__, jct->JCTIOT);
             for(mttr = jct->JCTIOT; mttr; mttr=iot->IOTIOTTR) {
                 /* read this jobs IOT (and PDDBs) record */
                 spool_read(js, mttr, iotbuf, hct->_BUFSIZE);
 
                 for(i=0, pddb = (__PDDB*)&iotbuf[cp->pddb1]; pddb < pddbend; i++, pddb++) {
-                    /* wtodumpf(pddb, sizeof(__PDDB), "PDDB#%d", i); */
+                    // wtodumpf(pddb, sizeof(__PDDB), "PDDB#%d", i);
 
                     if (pddb->PDBDSKEY == 0) break;
                     if (pddb->PDBMTTR == 0) continue;
@@ -176,20 +180,21 @@ JESJOB **jesjob(JES *jes, const char *filter, JESFILT type, int dd)
             }
 
             /* Process the SPIN IOT */
-            /* wtof("%s process the SPIN IOT", __func__); */
+            // wtof("%s process the SPIN IOT %p", __func__, jct->JCTSPIOT);
             for(mttr = jct->JCTSPIOT; mttr; mttr=iot->IOTIOTTR) {
                 /* read this jobs IOT (and PDDBs) record */
-                /* wtof("%s spool_read() MTTR=%08X", __func__, mttr); */
+                // wtof("%s spool_read() MTTR=%08X", __func__, mttr);
                 spool_read(js, mttr, iotbuf, hct->_BUFSIZE);
                 /* wtodumpf(iotbuf, sizeof(__IOT), "IOT %08X", mttr); */
 
                 for(i=0, pddb = (__PDDB*)&iotbuf[cp->pddb1]; pddb < pddbend; i++, pddb++) {
-                    /* wtodumpf(pddb, sizeof(__PDDB), "PDDB#%d", i); */
+                    // wtodumpf(pddb, sizeof(__PDDB), "PDDB#%d", i);
 
                     if (pddb->PDBDSKEY == 0) break;
                     if (pddb->PDBMTTR == 0) continue;
                     if (is_dup_dsid(job->jesdd, pddb->PDBDSKEY)) continue;
 
+                    // wtof("%s: calling process_pddb(%p, %p)", __func__, pddb, job);
                     /* populate jesdd from the pddb record */
                     if (!(jesdd=process_pddb(pddb, job))) goto quit;
                 }
@@ -227,14 +232,19 @@ JESJOB **jesjob(JES *jes, const char *filter, JESFILT type, int dd)
             unsigned count = arraycount(&job->jesdd);
             unsigned n;
 
-            for(n=0; n < count; n++) {
-                JESDD *dd = job->jesdd[n];
+            for(n=count; n > 0; n--) {
+                JESDD *dd = array_get(&job->jesdd, n);
 
                 if (!dd) continue;
                 if (dd->ddname[0]==0 || dd->ddname[0]==' ') {
-                    arraydel(&job->jesdd, n+1);
+#if 0
+                    array_del(&job->jesdd, n);
                     free(dd);
-                    count--;
+#else
+                    /* create a fake DD name */
+                    sprintf(dd->ddname, "UNK%04u", dd->dsid);
+                    sprintf(dd->dsname, "UNKNOWN.%s.SO%04u", job->jobid, dd->dsid);
+#endif
                 }
             }
 
@@ -338,6 +348,21 @@ process_pddb(__PDDB *pddb, JESJOB *job)
             strcpy(jesdd->ddname, "JESJRNL");
             sprintf(jesdd->dsname, "JES2.%s.SI%04u", job->jobid, pddb->PDBDSKEY);
             jesdd->flag = FLAG_JES2 | FLAG_SYSIN;
+            break;
+        }
+        default:  {
+            if (strcmp(job->jobname, "SYSLOG")==0) {
+                /* SYSLOG is a special case as there are no DD names.
+                 * 
+                 * We create DD names "JESnnnnn" 
+                 * and dataset names "JES2.STCnnnnn.SOnnnn"
+                 * 
+                 * Note that the names are not important so long as 
+                 * they are unique for each PDBDSKEY (DSID) value.
+                */
+                sprintf(jesdd->ddname, "JES%05u", pddb->PDBDSKEY);
+                sprintf(jesdd->dsname, "JES2.%s.SO%04u", job->jobid, pddb->PDBDSKEY);
+            }
             break;
         }
     }

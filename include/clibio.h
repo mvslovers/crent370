@@ -154,4 +154,13 @@ extern FILE *   __reopen(const char *fn, const char *mode, FILE *fp);
 extern int      __fseek(FILE *fp, long int offset, int whence);
 extern size_t   __fwrite(const void *vptr, size_t size, size_t nmemb, FILE *fp);
 
+/* __dsalc() allocate dataset - returns ddname if successful */
+extern int __dsalc(char *ddname, const char *opts);
+
+/* __dsalcf() allocate dataset (printf style) - returns ddname if successful */
+extern int __dsalcf(char *ddname, const char *opts, ...);
+
+/* __dsfree() deallocate ddname */
+extern int __dsfree(const char *ddname);   /* input dd name                    */
+
 #endif

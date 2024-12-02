@@ -14,6 +14,7 @@ A_FILES := @@aclose.asm \
 	@@crt1.asm \
 	@@crtm.asm \
 	@@crtsvc.asm \
+	dummy.asm \
 	@@dynal.asm \
 	@@exita.asm \
 	@@freem.asm \

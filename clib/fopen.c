@@ -5,6 +5,7 @@
 #include "cliblock.h"
 #include "clibary.h"
 #include "clibcrt.h"
+#include "clibtry.h"
 
 extern char *__getpfx(void);
 

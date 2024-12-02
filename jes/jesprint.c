@@ -106,10 +106,6 @@ int jesprint(JES *jes, JESJOB *job, unsigned dsid, int(*prt)(const char *line, u
         /* read block from spool dataset */
         if (spool_read(js, mttr, buf, hct->_BUFSIZE)) break;
 
-        if (strcmp(job->jobname, "SYSLOG")==0) {
-            wtodumpf(buf, hct->_BUFSIZE, "SYSLOG DSID=%u", jesdd->dsid);
-        }
-
         /* make sure this block is for our job */
         if (job->jobkey != block->jobkey) break;
         if (jesdd->dsid != block->dsid) break;

@@ -10,6 +10,7 @@ __txspac(TXT99 ***txt99, const char *space)
     char    *buf    = calloc(1, len + 1);
     char    *p;
     char    *s;
+    char    *d;
     TXT99   *tu;
 
     if (!len) goto quit;
@@ -18,7 +19,8 @@ __txspac(TXT99 ***txt99, const char *space)
     /* "pri[,sec]" */
     memcpy(buf, space, len);
     p = strtok(buf, " ,");
-    s = strtok(NULL, "");
+    s = strtok(NULL, ",");
+    d = strtok(NULL, "");
 
     /* Primary space */
     len = p ? atoi(p) : 0;
@@ -35,6 +37,16 @@ __txspac(TXT99 ***txt99, const char *space)
     tu = NewTXT99(DALSECND,1,3,&s[1]);
     if (!tu) goto quit;
     err = arrayadd(txt99, tu);
+
+    /* Directory space */
+    len = d ? atoi(d) : 0;
+    if (len) {
+        err = 1;
+        d = (char*)&len;
+        tu = NewTXT99(DALDIR,1,3,&d[1]);
+        if (!tu) goto quit;
+        err = arrayadd(txt99, tu);
+    }
 
 quit:
     if (buf)    free(buf);

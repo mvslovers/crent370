@@ -52,6 +52,12 @@ all: $(S_FILES) $(O_FILES)
 	@mvsasm "$<"
 	@touch "$@"
 
+# build object files from assembler files (.asm)
+%.o: %.asm
+	@echo "mvsasm $(notdir $<)"
+	@mvsasm "$<"
+	@touch "$@"
+
 # compile C source files (.c) into assembler files (.s)
 %.s: %.c
 	@echo "Compile $(notdir $<)"

@@ -20,11 +20,15 @@ __txdsn(TXT99 ***txt99, const char *dataset)
 
         member = strchr(dsn, '(');
         if (member) {
-            *member++ = 0;
+            TXT99 *txmem;
+            *member = 0;
+            member++;
             p = strchr(member,')');
             if (p) *p = 0;
             len = strlen(member);
-            err = arrayadd(txt99, NewTXT99(DALMEMBR,1,len,member));
+            txmem = NewTXT99(DALMEMBR,1,len,member);
+            wtodumpf(txmem, sizeof(TXT99)+len, "%s: DALMEMBR", __func__);
+            err = arrayadd(txt99, txmem);
             if (err) goto quit;
             len = strlen(dsn);
         }
