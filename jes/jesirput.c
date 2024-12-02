@@ -8,8 +8,13 @@ int jesirput(VSFILE *vsfile, const char *rec)
 {
     int      rc     = -1;
 
-    if (rec == NULL || rec[0] == 0 || strlen(rec) > 80) goto quit;
-   
+    if (rec == NULL || rec[0] == 0) goto quit;
+
+    if (vsfile == NULL) {
+        rc = -2;
+        goto quit;
+    }
+
     vsfile->flags |= VSFILE_FLAG_WRITE;
     
     strcpyp(vsfile->rpl.rplarea, 80, (void *)rec, ' ');

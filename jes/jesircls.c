@@ -12,8 +12,6 @@ int jesircls(VSFILE *vsfile)
             "ST  15,%1\n"
         : : "r"(&vsfile->rpl), "m"(rc) : "1", "14", "15");
 
-    printf("FOO> JOBID=%s\n", vsfile->rpl.rplrbar);
-
     vsclose(vsfile);
 
 quit:
