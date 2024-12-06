@@ -72,6 +72,7 @@ HASPCP *__cpopen(const char *dataset)
     if (!(dcb->dcboflgs & DCBOFOPN)) {
         __cpclos(cp);
         cp = NULL;
+        goto quit;
     }
 
     /* skip over SYNC records */
