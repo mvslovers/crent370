@@ -702,7 +702,7 @@ process_sysout(JESDD **jesdd, const char *ddname, const char *dsname, const char
 
     dsid = (unsigned short) atoi(&p[3]);
     if (!dsid) goto quit;
-#if 1
+#if 0
     if (ddname[0]==0 || ddname[0]==' ') {
         wtodumpf(ddname, 8, "process_sysout() null ddname for dsid=%d", dsid);
     }
