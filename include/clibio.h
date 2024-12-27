@@ -100,6 +100,7 @@ extern int      vfprintf(FILE *stream, const char *format, va_list arg);
 extern int      remove(const char *filename);
 extern int      rename(const char *old, const char *newnam);
 extern int      sprintf(char *s, const char *format, ...);
+extern int      snprintf(char *s, int n, const char *format, ...);
 extern int      vsprintf(char *s, const char *format, va_list arg);
 extern char     *fgets(char *s, int n, FILE *stream);
 extern int      ungetc(int c, FILE *stream);
