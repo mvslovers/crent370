@@ -90,6 +90,8 @@ JESJOB **jesjob(JES *jes, const char *filter, JESFILT type, int dd)
 
         /* wtodumpf(jct, sizeof(__JCT), "JCT mttr=%08X", jqe->JQETRAK); */
 
+
+
         if (jct->JCTJOBFL & JCTBATCH) {
             jobtype = "JOB";    /* Batch job */
         }
@@ -159,6 +161,8 @@ JESJOB **jesjob(JES *jes, const char *filter, JESFILT type, int dd)
         job->start_time64 = make_time(jct->JCTXEQON, jct->JCTXDTON);
         job->end_time64   = make_time(jct->JCTXEQOF, jct->JCTXDTOF);
         job->jobkey     = jct->JCTJBKEY;
+        job->completion  = (unsigned int)jct->JCTCNVRC;
+        job->jtflg       = jct->JCTJTFLG;
 
         if (dd) {
             /* Process the IOT */

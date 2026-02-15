@@ -34,11 +34,21 @@ struct jesjob {
     unsigned int    iotmttr;        /* 28 MTTR of IOT                       */
     unsigned int    spinmttr;       /* 2C MTTR of SPIN IOT                  */
     JESDD           **jesdd;        /* 30 array of output dd's              */
-    unsigned 		unused;			/* 34 unused							*/
+    unsigned int    completion;     /* 34 JCTCNVRC: job completion info     */
+                                    /*    after execution (high byte 0x77): */
+                                    /*      bits 12-23: system ABEND code   */
+                                    /*      bits  0-11: max condition code  */
+                                    /*    before execution (converter RC):  */
+                                    /*      0=OK, 4=JCL ERR, 8=I/O, 36=ABN  */
     time64_t        start_time64;   /* 38 start time                        */
     time64_t        end_time64;     /* 40 end time                          */
     unsigned int    jobkey;         /* 48 job key from JCT                  */
-};                                  /* 4C (76 bytes)                        */
+    unsigned char   jtflg;          /* 4C job termination flags (JCTJTFLG)  */
+#define JESJOB_JF   0x80            /* ... JOB FAILED                       */
+#define JESJOB_CF   0x40            /* ... JOB FAILED DUE TO CC             */
+#define JESJOB_ABD  0x20            /* ... ABEND (system or user)           */
+    unsigned char   __pad[3];       /* 4D alignment                         */
+};                                  /* 50 (80 bytes)                        */
 
 struct jesdd {
     unsigned char   eye[8];         /* 00 eye catcher for dumps             */
