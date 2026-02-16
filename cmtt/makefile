@@ -6,7 +6,7 @@ INC1 := -I.
 INC2 := -I/home/mike/repos/crent370/include
 INC3 := -I/home/mike/repos/crent370/cmtt
 CC := c2asm370
-CFLAGS := -fverbose-asm -S -O1 $(INC1) $(INC2) 
+CFLAGS := -fverbose-asm -S -O1 $(INC1) $(INC2) $(INC3)
 #
 # c source code files
 C_FILES := \
