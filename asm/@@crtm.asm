@@ -106,7 +106,7 @@ CRTSETUP DS    0H
          L     R15,=V(@@CRTGET)
          BALR  R14,R15           Get our CLIBCRT area
          L     R13,CRTSAVE-CLIBCRT(,R15) Restore original stack
-		 L     R0,OLDSAVE        Get old CRTSAVE value
+         L     R0,OLDSAVE        Get old CRTSAVE value
          ST    R0,CRTSAVE-CLIBCRT(,R15) restore CRTSAVE
 *
 * Release stack storage

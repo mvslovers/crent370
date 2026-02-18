@@ -1,3 +1,0 @@
-         PRINT GEN
-         $PDDB
-         END
