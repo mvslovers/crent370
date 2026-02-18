@@ -5,17 +5,17 @@ ROOT_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
 export PATH := $(ROOT_DIR)scripts:$(PATH)
 
 # Cross-compiler
-CC       := gccmvs
+CC       := c2asm370 #or classic gccmvs
 CFLAGS   := -fverbose-asm -S -O1
 
 # Include paths
 INCLUDE_DIR := $(ROOT_DIR)include
 
 # MVS host dataset configuration
-export MAC1           := MIG.CRENT370.MACLIB
+export MAC1           := <HQL>.CRENT370.MACLIB
 export MAC2           := SYS2.MACLIB
-export MVSASM_PUNCH   := MIG.CRENT370.OBJECT
-export MVSASM_SYSLMOD := MIG.CRENT370.NCALIB
+export MVSASM_PUNCH   := <HLQ>.CRENT370.OBJECT
+export MVSASM_SYSLMOD := <HLQ>.CRENT370.NCALIB
 
 # JES job classes
 export MVSASM_JOBCLASS    := A
