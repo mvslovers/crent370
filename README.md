@@ -26,10 +26,15 @@ in `config.mk`:
 After allocating the datasets, upload all macro and copy members from
 the `maclib/` directory in this repository into `<HLQ>.CRENT370.MACLIB`:
 
-```
+```bash
 for f in maclib/*; do
   member=$(basename "${f%.*}" | tr 'a-z' 'A-Z')
-  zowe files upload file-to-data-set "$f" "<HLQ>.CRENT370.MACLIB($member)"
+  curl -s -X PUT \
+    -u "<USERNAME>:<PASSWORD>" \
+    -H "Content-Type: text/plain" \
+    -H "X-IBM-Data-Type: text" \
+    --data-binary @"$f" \
+    "http://<HOST>:<PORT>/zosmf/restfiles/ds/<HLQ>.CRENT370.MACLIB(${member})"
 done
 ```
 
