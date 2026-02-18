@@ -15,21 +15,21 @@ Originally created by Michael Dean Rayborn, now maintained by the
 
 Before building, three partitioned datasets must be allocated on the
 target MVS system.  Replace `<HLQ>` with your high-level qualifier
-(the default in `config.mk` is `MIG.CRENT370`):
+in `config.mk`:
 
-| Dataset           | RECFM | LRECL | Purpose                        |
-|-------------------|-------|-------|--------------------------------|
-| `<HLQ>.MACLIB`    | FB    | 80    | Macro and copy member library  |
-| `<HLQ>.OBJECT`    | FB    | 80    | Assembled object decks (punch) |
-| `<HLQ>.NCALIB`    | U     | 0     | Link-edited load modules       |
+| Dataset                    | RECFM | LRECL | Purpose                        |
+|----------------------------|-------|-------|--------------------------------|
+| `<HLQ>.CRENT370.MACLIB`    | FB    | 80    | Macro and copy member library  |
+| `<HLQ>.CRENT370.OBJECT`    | FB    | 80    | Assembled object decks (punch) |
+| `<HLQ>.CRENT370.NCALIB`    | U     | 0     | Link-edited load modules       |
 
 After allocating the datasets, upload all macro and copy members from
-the `maclib/` directory in this repository into `<HLQ>.MACLIB`:
+the `maclib/` directory in this repository into `<HLQ>.CRENT370.MACLIB`:
 
 ```
 for f in maclib/*; do
   member=$(basename "${f%.*}" | tr 'a-z' 'A-Z')
-  zowe files upload file-to-data-set "$f" "<HLQ>.MACLIB($member)"
+  zowe files upload file-to-data-set "$f" "<HLQ>.CRENT370.MACLIB($member)"
 done
 ```
 
@@ -56,10 +56,10 @@ The `.env` file is git-ignored and never committed.
 Edit `config.mk` to match your environment:
 
 ```makefile
-export MAC1           := <HLQ>.MACLIB
+export MAC1           := <HLQ>.CRENT370.MACLIB
 export MAC2           := SYS2.MACLIB
-export MVSASM_PUNCH   := <HLQ>.OBJECT
-export MVSASM_SYSLMOD := <HLQ>.NCALIB
+export MVSASM_PUNCH   := <HLQ>.CRENT370.OBJECT
+export MVSASM_SYSLMOD := <HLQ>.CRENT370.NCALIB
 ```
 
 ## Building
@@ -82,7 +82,7 @@ asm/          Assembler-only modules
 src/clib/     C runtime library (libc functions)
 src/cmtt/     Console message translation table
 src/dyn75/    SVC 75 dynamic allocation / TCP-IP socket layer
-src/jes/      JES2 spool API
+src/jes/      JES2 spool interface
 src/racf/     RACF security interface
 src/thdmgr/   Thread manager
 src/time64/   64-bit time functions
