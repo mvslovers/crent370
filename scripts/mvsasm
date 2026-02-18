@@ -105,7 +105,7 @@ ${SYSLMOD_DD}
 ENDJCL
 
 # --- Strip CR from generated JCL ---
-sed -i '' 's/\r$//' "$TEMPFILE"
+sed 's/\r$//' "$TEMPFILE" > "${TEMPFILE}.tmp" && mv "${TEMPFILE}.tmp" "$TEMPFILE"
 
 # --- Submit via curl ---
 RESULT=$(curl -s -S --connect-timeout 10 --max-time 60 -X PUT \
