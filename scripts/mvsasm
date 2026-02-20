@@ -14,7 +14,7 @@ SOURCE="$1"
 PUNCH="${2:-${MVSASM_PUNCH:-}}"
 SYSLMOD="${3:-${MVSASM_SYSLMOD:-}}"
 
-JOBNAME=$(basename "$SOURCE" | tr '[:lower:]' '[:upper:]' | cut -d'.' -f1 | sed 's/^@*//')
+JOBNAME=$(basename "$SOURCE" | tr '[:lower:]' '[:upper:]' | cut -d'.' -f1)
 JOBNAME="${JOBNAME:0:8}"
 
 [[ -n "$PUNCH" ]]   && PUNCH="$PUNCH($JOBNAME)"
