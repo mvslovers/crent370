@@ -2,10 +2,12 @@
 # mvsasm - Assemble and link MVS source using curl against mvs/MF
 set -euo pipefail
 
-# --- Load .env from repo root ---
+# --- Load .env (working directory first, then script's repo root) ---
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-if [[ -f "$ROOT_DIR/.env" ]]; then
+if [[ -f "$PWD/.env" ]]; then
+  source "$PWD/.env"
+elif [[ -f "$ROOT_DIR/.env" ]]; then
   source "$ROOT_DIR/.env"
 fi
 
