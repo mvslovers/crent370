@@ -1,4 +1,4 @@
-MODULES := asm src/clib src/cmtt src/dyn75 src/jes src/os src/racf src/thdmgr src/time64
+MODULES := asm src/clib src/cmtt src/crypto src/dyn75 src/jes src/os src/racf src/thdmgr src/time64
 
 all:
 	@rm -f .build-warnings
