@@ -1,6 +1,6 @@
 include ../../config.mk
 
-CFLAGS += -I. -I$(INCLUDE_DIR)
+CFLAGS += -I. -I$(INC_DIR)
 
 C_FILES := tm64asc.c \
 	tm64ascr.c \
@@ -34,7 +34,7 @@ C_FILES := tm64asc.c \
 A_FILES :=
 
 # Rebuild .s files when clib64.h changes
-%.s: %.c $(INCLUDE_DIR)/clib64.h
+%.s: %.c $(INC_DIR)/clib64.h
 	@echo "Compile $(notdir $<)"
 	$(CC) $(CFLAGS) -c $< -o $@
 

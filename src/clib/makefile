@@ -2,7 +2,7 @@ include ../../config.mk
 
 export MAC2 := SYS1.HASPSRC
 
-CFLAGS += -I. -I$(INCLUDE_DIR)
+CFLAGS += -I. -I$(INC_DIR)
 
 C_FILES := abort.c \
 	@@abrpt.c \
