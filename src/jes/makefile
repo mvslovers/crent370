@@ -1,6 +1,6 @@
 include ../../config.mk
 
-CFLAGS += -I. -I$(INCLUDE_DIR)
+CFLAGS += -I. -I$(INC_DIR)
 
 C_FILES := jescanj.c \
 	jesclose.c \
