@@ -2,8 +2,6 @@ include config.mk
 
 MODULES := asm src/clib src/cmtt src/crypto src/dyn75 src/jes src/os src/racf src/thdmgr src/time64
 
-include bootstrap.mk
-
 all:
 	@rm -f .build-warnings
 	@for dir in $(MODULES); do $(MAKE) -C $$dir $@ || exit 1; done
@@ -43,5 +41,7 @@ compiledb:
 		done; \
 		echo "]"; \
 	} > compile_commands.json
+
+include bootstrap.mk
 
 .PHONY: all clean link install package compiledb
