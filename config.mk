@@ -6,6 +6,7 @@ ROOT_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
 
 export MVS_HOST MVS_PORT MVS_USER MVS_PASS
 export MVS_JOBCLASS MVS_MSGCLASS
+export CRENT_MACLIB CRENT_SYS2_MACLIB CRENT_PUNCH CRENT_SYSLMOD
 
 # Tools path (mvsasm etc.)
 export PATH := $(ROOT_DIR)scripts:$(PATH)
