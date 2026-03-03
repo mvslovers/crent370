@@ -150,6 +150,21 @@ RC_NUM=$((10#${RC_NUM:-9999}))
 
 if [[ "$RC_NUM" -gt 4 ]]; then
   echo "mvsasm: $JOBNAME ($JOBID) FAILED RC=$RETCODE" >&2
+  # Fetch spool output to show assembler/linker diagnostics
+  FILES_URL="$BASE_URL/$JOBNAME_ENC/$JOBID/files"
+  SPOOL=$(curl -s --connect-timeout 10 --max-time 30 \
+    -u "${MVS_USER}:${MVS_PASS}" "$FILES_URL" 2>/dev/null) || true
+  if [[ -n "$SPOOL" ]]; then
+    RECORDS=$(echo "$SPOOL" | jq -r '.items[]? | "\(.id) \(.ddname)"' 2>/dev/null) || true
+    while IFS=' ' read -r fid ddname; do
+      [[ -z "$fid" ]] && continue
+      echo "--- $ddname (file $fid) ---" >&2
+      curl -s --connect-timeout 10 --max-time 30 \
+        -u "${MVS_USER}:${MVS_PASS}" \
+        "$FILES_URL/$fid/records" 2>/dev/null >&2 || true
+      echo "" >&2
+    done <<< "$RECORDS"
+  fi
   exit 1
 elif [[ "$RC_NUM" -eq 4 ]]; then
   # CC=4: collect warning

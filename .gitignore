@@ -3,6 +3,7 @@
 *.s
 *.jcl
 .clangd
+compile_commands.json
 .build-warnings
 .env
 zowe.config.json
