@@ -232,9 +232,9 @@ _bs_runtime:
 _bs_datasets:
 	$(call _hdr,"Datasets")
 	@$(BMAKE) _ds_ensure DS_NAME="$(CRENT_PUNCH)" \
-		DS_BODY='{"dsorg":"PO","recfm":"FB","lrecl":80,"blksize":3120,"alcunit":"TRK","primary":10,"secondary":5,"dirblk":10}'
+		DS_BODY='{"dsorg":"PO","recfm":"FB","lrecl":80,"blksize":3120,"alcunit":"TRK","primary":600,"secondary":10,"dirblk":100}'
 	@$(BMAKE) _ds_ensure DS_NAME="$(CRENT_SYSLMOD)" \
-		DS_BODY='{"dsorg":"PO","recfm":"U","lrecl":0,"blksize":15040,"alcunit":"TRK","primary":50,"secondary":20,"dirblk":10}'
+		DS_BODY='{"dsorg":"PO","recfm":"U","lrecl":0,"blksize":15040,"alcunit":"TRK","primary":700,"secondary":100,"dirblk":200}'
 
 # Generic helper: ensure a single dataset exists
 .PHONY: _ds_ensure
