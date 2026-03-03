@@ -44,5 +44,8 @@ jobs:
           echo "mvsMF not ready after 60s"
           exit 1
 
+      - name: Bootstrap
+        run: make bootstrap
+
       - name: Build
         run: make
