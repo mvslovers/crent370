@@ -76,6 +76,13 @@ struct dslist {
     unsigned char   rfmon;      /* last reference month                 */
     unsigned char   rfday;      /* last reference day of month          */
     
+    /* space allocation (from DSCB1) */
+    unsigned char   spacu;      /* space units: 'C'=CYL, 'T'=TRK       */
+    unsigned char   scal1;      /* raw secondary alloc flags (DSCB1)    */
+    unsigned short  secondary;  /* secondary allocation quantity        */
+    unsigned short  used_trks;  /* used tracks (from lstar TTR)         */
+    unsigned short  alloc_trks; /* allocated tracks (from extents)      */
+
     /* added for __listal() function */
     char            disp[4];    /* dataset disp: OLD,NEW,MOD,SHR        */
 };
