@@ -171,17 +171,15 @@ check_vol:
 
     /* space allocation info */
     dslist->scal1 = dscb1->scal1;
-    if (dscb1->scal1 & CYL)
+    if ((dscb1->scal1 & 0xC0) == CYL)
         dslist->spacu = 'C';
-    else if (dscb1->scal1 & TRK)
-        dslist->spacu = 'T';
     else
         dslist->spacu = 'T';
     dslist->secondary = ((unsigned)dscb1->scal3[0] << 16)
                       | ((unsigned)dscb1->scal3[1] << 8)
                       |  (unsigned)dscb1->scal3[2];
-    dslist->used_trks = ((unsigned)dscb1->lstar[0] << 8)
-                      |  (unsigned)dscb1->lstar[1];
+    dslist->used_trks = (((unsigned)dscb1->lstar[0] << 8)
+                      |  (unsigned)dscb1->lstar[1]) + 1;
     {
         /* compute allocated tracks from DSCB1 extents (max 3).
         ** datasets with >3 extents have additional extents in
@@ -192,10 +190,23 @@ check_vol:
         DSCB dscb4buf = {0};
         unsigned short trk_per_cyl = 0;
 
+        /* workaround: struct dscb4 includes key[44] but
+        ** __dscbv() returns data-only. dstrk is at data
+        ** offset 20, not struct offset 64. */
         if (__dscbv(dslist->volser, &dscb4buf) == 0)
-            trk_per_cyl = dscb4buf.dscb4.dstrk;
+            trk_per_cyl = ((unsigned char)dscb4buf.work[20] << 8)
+                        |  (unsigned char)dscb4buf.work[21];
         if (trk_per_cyl == 0)
             trk_per_cyl = 30; /* fallback: 3350 */
+
+        /* derive device type from tracks per cylinder */
+        switch (trk_per_cyl) {
+        case 30: strcpy(dslist->dev, "3350"); break;
+        case 12: strcpy(dslist->dev, "3375"); break;
+        case 19: strcpy(dslist->dev, "3380"); break;
+        case 15: strcpy(dslist->dev, "3390"); break;
+        default: strcpy(dslist->dev, "3390"); break;
+        }
 
         for (e = 0; e < 3 && e < dscb1->noepv; e++) {
             unsigned short lo_cc, lo_hh, hi_cc, hi_hh;
