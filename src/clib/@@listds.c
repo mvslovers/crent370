@@ -169,6 +169,61 @@ check_vol:
     dslist->lrecl   = dscb1->lrecl;
     dslist->blksize = dscb1->blksz;
 
+    /* space allocation info */
+    dslist->scal1 = dscb1->scal1;
+    if ((dscb1->scal1 & 0xC0) == CYL)
+        dslist->spacu = 'C';
+    else
+        dslist->spacu = 'T';
+    dslist->secondary = ((unsigned)dscb1->scal3[0] << 16)
+                      | ((unsigned)dscb1->scal3[1] << 8)
+                      |  (unsigned)dscb1->scal3[2];
+    dslist->used_trks = (((unsigned)dscb1->lstar[0] << 8)
+                      |  (unsigned)dscb1->lstar[1]) + 1;
+    {
+        /* compute allocated tracks from DSCB1 extents (max 3).
+        ** datasets with >3 extents have additional extents in
+        ** DSCB3 which we do not read here — alloc_trks will
+        ** be an undercount in that case. */
+        int e;
+        unsigned short trks = 0;
+        DSCB dscb4buf = {0};
+        unsigned short trk_per_cyl = 0;
+
+        /* workaround: struct dscb4 includes key[44] but
+        ** __dscbv() returns data-only. dstrk is at data
+        ** offset 20, not struct offset 64. */
+        if (__dscbv(dslist->volser, &dscb4buf) == 0)
+            trk_per_cyl = ((unsigned char)dscb4buf.work[20] << 8)
+                        |  (unsigned char)dscb4buf.work[21];
+        if (trk_per_cyl == 0)
+            trk_per_cyl = 30; /* fallback: 3350 */
+
+        /* derive device type from tracks per cylinder */
+        switch (trk_per_cyl) {
+        case 30: strcpy(dslist->dev, "3350"); break;
+        case 12: strcpy(dslist->dev, "3375"); break;
+        case 19: strcpy(dslist->dev, "3380"); break;
+        case 15: strcpy(dslist->dev, "3390"); break;
+        default: strcpy(dslist->dev, "3390"); break;
+        }
+
+        for (e = 0; e < 3 && e < dscb1->noepv; e++) {
+            unsigned short lo_cc, lo_hh, hi_cc, hi_hh;
+            lo_cc = ((unsigned)dscb1->extent[e].lower[0] << 8)
+                  |  (unsigned)dscb1->extent[e].lower[1];
+            lo_hh = ((unsigned)dscb1->extent[e].lower[2] << 8)
+                  |  (unsigned)dscb1->extent[e].lower[3];
+            hi_cc = ((unsigned)dscb1->extent[e].upper[0] << 8)
+                  |  (unsigned)dscb1->extent[e].upper[1];
+            hi_hh = ((unsigned)dscb1->extent[e].upper[2] << 8)
+                  |  (unsigned)dscb1->extent[e].upper[3];
+            trks += (hi_cc - lo_cc) * trk_per_cyl
+                  + (hi_hh - lo_hh) + 1;
+        }
+        dslist->alloc_trks = trks;
+    }
+
     dslist->cryear  = 1900 + dscb1->credt[0];
     if (dslist->cryear < 1980) {
         dslist->cryear += 100;
