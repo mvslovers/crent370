@@ -1,0 +1,68 @@
+[project]
+name = "crent370"
+version = "1.0.1-dev"
+type = "library"
+
+[build]
+cflags = ["-Isrc/thdmgr", "-Isrc/time64"]
+
+[build.sources]
+c_dirs = [
+    "src/clib",
+    "src/cmtt",
+    "src/crypto",
+    "src/dyn75",
+    "src/jes",
+    "src/os",
+    "src/racf",
+    "src/thdmgr",
+    "src/time64",
+]
+asm_dirs = ["asm"]
+
+[mvs.build.datasets.punch]
+suffix = "OBJECT"
+dsorg = "PO"
+recfm = "FB"
+lrecl = 80
+blksize = 3120
+space = ["TRK", 600, 100, 200]
+
+[mvs.build.datasets.ncalib]
+suffix = "NCALIB"
+dsorg = "PO"
+recfm = "U"
+lrecl = 0
+blksize = 15040
+space = ["TRK", 700, 100, 250]
+
+[mvs.build.datasets.source]
+suffix = "SOURCE"
+dsorg = "PO"
+recfm = "FB"
+lrecl = 80
+blksize = 3120
+space = ["TRK", 600, 100, 200]
+
+[mvs.build.datasets.maclib]
+suffix = "MACLIB"
+dsorg = "PO"
+recfm = "FB"
+lrecl = 80
+blksize = 32720
+space = ["TRK", 30, 10, 50]
+local_dir = "maclib/"
+
+[system]
+maclibs = ["SYS1.HASPSRC"]
+
+[link]
+autocall = false
+
+[artifacts]
+mvs = true
+headers = true
+
+[release]
+github = "mvslovers/crent370"
+version_files = ["VERSION"]

@@ -1,10 +1,30 @@
-.DS_Store
-*.o
+# Generated assembler sources
+src/*.s
+
+# Object files
 *.s
-*.jcl
-.clangd
-compile_commands.json
+*.o
+
+# mbt build state
+.mbt/
+contrib/
+dist/
 .build-warnings
+
+# IDE
+*.geany
+compile_commands.json
+.cache/
+.cache/
+CLAUDE.md
+
+# Environment
 .env
-zowe.config.json
-zowe.config.user.json
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+
+# UFS disk images
+*.diskfile
