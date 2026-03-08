@@ -8,15 +8,15 @@ cflags = ["-Isrc/thdmgr", "-Isrc/time64"]
 
 [build.sources]
 c_dirs = [
-    "src/clib",
-    "src/cmtt",
-    "src/crypto",
-    "src/dyn75",
-    "src/jes",
-    "src/os",
-    "src/racf",
-    "src/thdmgr",
-    "src/time64",
+  "src/clib",
+  "src/cmtt",
+  "src/crypto",
+  "src/dyn75",
+  "src/jes",
+  "src/os",
+  "src/racf",
+  "src/thdmgr",
+  "src/time64",
 ]
 asm_dirs = ["asm"]
 
@@ -55,9 +55,6 @@ local_dir = "maclib/"
 
 [system]
 maclibs = ["SYS1.HASPSRC"]
-
-[link]
-autocall = false
 
 [artifacts]
 mvs = true
