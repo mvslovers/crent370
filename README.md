@@ -7,76 +7,35 @@ Originally created by Michael Dean Rayborn, now maintained by the
 
 ## Prerequisites
 
-- `gccmvs` cross-compiler (GCC targeting MVS/370 assembler)
-- `curl` and `jq`
-- MVS system with [mvs/MF](https://github.com/mvslovers/mvsmf) (z/OSMF REST API)
+- [c2asm370](https://github.com/mvslovers/c2asm370) cross-compiler
+- Python 3.12+
+- MVS system with [mvs/MF](https://github.com/mvslovers/mvsmf) (z/OSMF-compatible REST API)
 
-## MVS Dataset Setup
+## Setup
 
-Before building, three partitioned datasets must be allocated on the
-target MVS system.  Replace `<HLQ>` with your high-level qualifier
-in `config.mk`:
-
-| Dataset                    | RECFM | LRECL | Purpose                        |
-|----------------------------|-------|-------|--------------------------------|
-| `<HLQ>.CRENT370.MACLIB`    | FB    | 80    | Macro and copy member library  |
-| `<HLQ>.CRENT370.OBJECT`    | FB    | 80    | Assembled object decks (punch) |
-| `<HLQ>.CRENT370.NCALIB`    | U     | 0     | Link-edited load modules       |
-
-After allocating the datasets, upload all macro and copy members from
-the `maclib/` directory in this repository into `<HLQ>.CRENT370.MACLIB`:
-
-```bash
-for f in maclib/*; do
-  member=$(basename "${f%.*}" | tr 'a-z' 'A-Z')
-  curl -s -X PUT \
-    -u "<USERNAME>:<PASSWORD>" \
-    -H "Content-Type: text/plain" \
-    -H "X-IBM-Data-Type: text" \
-    --data-binary @"$f" \
-    "http://<HOST>:<PORT>/zosmf/restfiles/ds/<HLQ>.CRENT370.MACLIB(${member})"
-done
-```
-
-## MVS Connection
-
-Copy `.env.example` to `.env` and set your MVS host credentials:
+Copy `.env.example` to `.env` and set your MVS connection details:
 
 ```bash
 cp .env.example .env
 # edit .env with your values
 ```
 
+Then bootstrap the project (allocates datasets on MVS, uploads maclib):
+
 ```bash
-MVSASM_HOST=your-mvs-host
-MVSASM_PORT=1080
-MVSASM_USER=IBMUSER
-MVSASM_PASS=secret
-```
-
-The `.env` file is git-ignored and never committed.
-
-## Configuration
-
-Edit `config.mk` to match your environment:
-
-```makefile
-export MAC1           := <HLQ>.CRENT370.MACLIB
-export MAC2           := SYS2.MACLIB
-export MVSASM_PUNCH   := <HLQ>.CRENT370.OBJECT
-export MVSASM_SYSLMOD := <HLQ>.CRENT370.NCALIB
+make bootstrap
 ```
 
 ## Building
 
-```
-# Build all modules
-make
+```bash
+# Build all modules (cross-compile + assemble + NCAL link)
+make build
 
 # Build a single module
-make -C src/jes
+make build ARGS="--member HELLO"
 
-# Clean all generated files
+# Clean local build artifacts
 make clean
 ```
 
