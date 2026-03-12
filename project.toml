@@ -55,11 +55,3 @@ local_dir = "maclib/"
 
 [system]
 maclibs = ["SYS1.HASPSRC"]
-
-[artifacts]
-mvs = true
-headers = true
-
-[release]
-github = "mvslovers/crent370"
-version_files = ["VERSION"]
