@@ -11,6 +11,10 @@
 #include "clibjes2.h"   /* JES prototypes */
 #include "clibary.h"    /* dynamic array                                    */
 
+#ifndef MIN
+#define MIN(a,b) ((a) < (b) ? (a) : (b))
+#endif
+
 static int process_intxt(JES *jes, __JQE *jqe, __JCT *jct, unsigned pddb_mttr, JESJOB *job);
 static int process_job(char *buf, char *jobname, char *userid);
 static JESDD *process_pddb(__PDDB *pddb, JESJOB *job);
@@ -643,26 +647,32 @@ process_dd(char *buf, char *eob, char *ddname, char *dsname, char *sysout, unsig
         wtodumpf(buf, n, "%s: t->key=%d", __func__, t->key);
 #endif
         switch (t->key) {
-        case DDK:       /* DD      DD                           */
-            memcpy(ddname, t->data, t->len);
-            ddname[t->len] = 0;
+        case DDK: {     /* DD      DD                           */
+            unsigned len = MIN(t->len, 8);
+            memcpy(ddname, t->data, len);
+            ddname[len] = 0;
             strtok(ddname, " ");
-            // wtodumpf(ddname, t->len, "DDK");
             break;
-        case DSNAMEK:   /* DD C    DSNAME=                      */
+        }
+        case DSNAMEK: { /* DD C    DSNAME=                      */
+            unsigned len;
             if (t->len & 0x80) {
                 buf++;
                 t = (TEXT*)buf;
             }
-            memcpy(dsname, t->data, t->len);
-            dsname[t->len] = 0;
+            len = MIN(t->len, 44);
+            memcpy(dsname, t->data, len);
+            dsname[len] = 0;
             strtok(dsname, " ");
             break;
-        case SYSOUTK:   /* DD      SYSOUT=                      */
-            memcpy(sysout, t->data, t->len);
-            sysout[t->len] = 0;
+        }
+        case SYSOUTK: { /* DD      SYSOUT=                      */
+            unsigned len = MIN(t->len, 4);
+            memcpy(sysout, t->data, len);
+            sysout[len] = 0;
             strtok(sysout, " ");
             break;
+        }
         case SYSINCTK:  /* DD      SYSIN number of records      */
 #if 1
             *sysin = 1;
@@ -671,13 +681,19 @@ process_dd(char *buf, char *eob, char *ddname, char *dsname, char *sysout, unsig
 #endif
             break;
 		case SPACEK: 	/* SPACE 4702 03E3D9D2 83 01F1 01F1 01F1 :...TRKc.1.1.1...: */
-			// wtodumpf(buf, 16, "SPACEK");
-			buf += 3 + t->len;
+			/* skip header (3 bytes) + unit type data (t->len bytes) */
+			buf += 3 + (t->len & 0x7F);
 			continue;
-		case 0x83:	/* SPACE lvlvlv */
-			// wtodumpf(buf, 16, "0x83");
-			buf += 7;
+		case 0x83: {	/* SPACE quantities: variable-length length-prefixed values */
+			unsigned char *q = (unsigned char *)(buf + 1);
+			/* each quantity is a length-prefixed numeric string;
+			   length bytes are small (0x01-0x05), keys are >= 0x1B */
+			while (q < (unsigned char *)eob && *q > 0 && *q < 0x10) {
+				q += 1 + *q;
+			}
+			buf = (char *)q;
 			continue;
+		}
         }
 
         /* move buf pointer to next key */
