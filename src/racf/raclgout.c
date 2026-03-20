@@ -16,6 +16,7 @@ racf_logout(ACEE **acee)
     unsigned        *asxb       = (unsigned *)ascb[0x6C/4]; /* A(ASXB)      */
     ACEE            **asxbsenv  = (ACEE **)  &asxb[0xC8/4]; /* A(ASXBSENV)  */
     ACEE            *oldacee    = *asxbsenv;                /* prev ACEE    */
+    ACEE            *delacee;
     RACINIT         plist;
 
     /* lock the ASXB (ENQ) address */
@@ -52,8 +53,9 @@ racf_logout(ACEE **acee)
 "         MODESET KEY=ZERO,MODE=SUP\n" : : : "1", "14", "15");
     }
 
-    /* put this ACEE in ASXBSENV */
-    *asxbsenv = *acee;
+    /* put this ACEE in ASXBSENV for RACINIT DELETE */
+    delacee   = *acee;
+    *asxbsenv = delacee;
 
     __asm__("\n"
 "*\n"
@@ -62,12 +64,13 @@ racf_logout(ACEE **acee)
 "         RACINIT ENVIR=DELETE,ACEE=(%1),MF=(E,%2)\n"
 "         ST\t15,%0" : "=m"(rc) : "r"(acee), "m"(plist) : "1", "14", "15");
 
-    if (oldacee != *acee) {
-        /* restore previous ACEE in ASXBSENV */
-        *asxbsenv = oldacee;
+    if (oldacee == delacee) {
+        /* ASXBSENV pointed to the ACEE we just deleted — clear it */
+        *asxbsenv = (ACEE*)0;
     }
     else {
-        *asxbsenv = (ACEE*)0;
+        /* ASXBSENV was a different ACEE — restore it */
+        *asxbsenv = oldacee;
     }
 
     if (sup) {
