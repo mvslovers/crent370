@@ -1,6 +1,6 @@
 [project]
 name = "crent370"
-version = "1.0.7"
+version = "1.0.8-dev"
 type = "library"
 
 [build]
