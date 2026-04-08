@@ -47,105 +47,113 @@
 **          list form of the macro does not have the proper RELEASE parameter.
 **          Macro processing terminates.
 */
-#include "racf.h"
 #include "cliblock.h"
+#include "racf.h"
 
 __asm__("\n&FUNC    SETC 'racf_auth'");
-int
-racf_auth(ACEE *acee, const char *classname, const char *resource, int attr)
-{
-    int         rc          = 0;
-    unsigned    *psa        = (unsigned *)0;
-    unsigned    *ascb       = (unsigned *)psa[0x224/4]; /* A(ASCB)      */
-    unsigned    *asxb       = (unsigned *)ascb[0x6C/4]; /* A(ASXB)      */
-    ACEE        **asxbsenv  = (ACEE **)  &asxb[0xC8/4]; /* A(ASXBSENV)  */
-    ACEE        *oldacee    = *asxbsenv;                /* prev ACEE    */
-    int         len;
-    RACLASS     cclass;
-    char        resname[80];
-    RACHECK     plist;
+int racf_auth(ACEE *acee, const char *classname, const char *resource,
+              int attr) {
+  int rc = 0;
+  unsigned *psa = (unsigned *)0;
+  unsigned *ascb = (unsigned *)psa[0x224 / 4]; /* A(ASCB)      */
+  unsigned *asxb = (unsigned *)ascb[0x6C / 4]; /* A(ASXB)      */
+  ACEE **asxbsenv = (ACEE **)&asxb[0xC8 / 4];  /* A(ASXBSENV)  */
+  ACEE *oldacee = *asxbsenv;                   /* prev ACEE    */
+  int len;
+  RACLASS cclass;
+  char resname[80];
+  RACHECK plist;
 
-    /* lock the ASXB (ENQ) address */
-    lock(asxb,0);
+  /* lock the ASXB (ENQ) address */
+  lock(asxb, 0);
 
-    memset(cclass.name, ' ', sizeof(cclass.name));
-    memset(resname, ' ', sizeof(resname));
-    memset(&plist, 0, sizeof(plist));
+  memset(cclass.name, ' ', sizeof(cclass.name));
+  memset(resname, ' ', sizeof(resname));
+  memset(&plist, 0, sizeof(plist));
 
-    if (classname) {
-        len = strlen(classname);
-        if (len > sizeof(cclass.name)) len = sizeof(cclass.name);
-        memcpy(cclass.name, classname, len);
-    }
+  if (classname) {
+    len = strlen(classname);
+    if (len > sizeof(cclass.name))
+      len = sizeof(cclass.name);
+    cclass.len = len;
+    memcpy(cclass.name, classname, len);
+  }
 
-    if (resource) {
-        len = strlen(resource);
-        if (len > sizeof(resname)) len = sizeof(resname);
-        memcpy(resname, resource, len);
-    }
+  if (resource) {
+    len = strlen(resource);
+    if (len > sizeof(resname))
+      len = sizeof(resname);
+    memcpy(resname, resource, len);
+  }
 
-    switch (attr) {
-    case 0:
-        /* not specified, default to READ access */
-        attr = RACHECK_ATTR_READ;
-        break;
-    case RACHECK_ATTR_READ:
-    case RACHECK_ATTR_UPDATE:
-    case RACHECK_ATTR_CONTROL:
-    case RACHECK_ATTR_ALTER:
-        /* seems okay */
-        break;
-    default:
-        /* invalid, set to highest access allowed */
-        attr = RACHECK_ATTR_ALTER;
-    }
+  switch (attr) {
+  case 0:
+    /* not specified, default to READ access */
+    attr = RACHECK_ATTR_READ;
+    break;
+  case RACHECK_ATTR_READ:
+  case RACHECK_ATTR_UPDATE:
+  case RACHECK_ATTR_CONTROL:
+  case RACHECK_ATTR_ALTER:
+    /* seems okay */
+    break;
+  default:
+    /* invalid, set to highest access allowed */
+    attr = RACHECK_ATTR_ALTER;
+  }
 #if 1
-	plist.flag1 |= RACHECK_FLAG1_LOG_NONE;
+  plist.flag1 |= RACHECK_FLAG1_LOG_NONE;
 #endif
-    plist.len   = sizeof(plist);
+  plist.len = sizeof(plist);
 
-    __asm__("\n"
-"*\n"
-"* enter supervisor state\n"
-"*\n"
-"         MODESET KEY=ZERO,MODE=SUP\n"
-        : : : "1", "14", "15");
+  __asm__("\n"
+          "*\n"
+          "* enter supervisor state\n"
+          "*\n"
+          "         MODESET KEY=ZERO,MODE=SUP\n"
+          :
+          :
+          : "1", "14", "15");
 
-    if (acee) {
-        /* set ASXBSENV with the ACEE pointer */
-        *asxbsenv = acee;
-    }
+  if (acee) {
+    /* set ASXBSENV with the ACEE pointer */
+    *asxbsenv = acee;
+  }
 
-    __asm__("\n"
-"*\n"
-"* check access to resource\n"
-"*\n"
-"         RACHECK ENTITY=((%1)),CLASS=(%2),ATTR=(%3),MF=(E,%4)\n"
-"         ST    15,%0"
-        : "=m"(rc) : "r"(resname), "r"(&cclass), "r"(attr), "m"(plist)
-        : "1", "14", "15" );
+  __asm__("\n"
+          "*\n"
+          "* check access to resource\n"
+          "*\n"
+          "         RACHECK ENTITY=((%1)),CLASS=(%2),ATTR=(%3),MF=(E,%4)\n"
+          "         ST    15,%0"
+          : "=m"(rc)
+          : "r"(resname), "r"(&cclass), "r"(attr), "m"(plist)
+          : "1", "14", "15");
 
-    if (acee) {
-        /* set ASXBSENV with the prev ACEE pointer */
-        *asxbsenv = oldacee;
-    }
+  if (acee) {
+    /* set ASXBSENV with the prev ACEE pointer */
+    *asxbsenv = oldacee;
+  }
 
-    __asm__("\n"
-"*\n"
-"* return to problem state\n"
-"*\n"
-"         MODESET KEY=NZERO,MODE=PROB\n"
-        : : : "1", "14", "15");
+  __asm__("\n"
+          "*\n"
+          "* return to problem state\n"
+          "*\n"
+          "         MODESET KEY=NZERO,MODE=PROB\n"
+          :
+          :
+          : "1", "14", "15");
 
-    /* unlock the ASXB (ENQ) address */
-    unlock(asxb,0);
+  /* unlock the ASXB (ENQ) address */
+  unlock(asxb, 0);
 
-    return rc;
+  return rc;
 }
 #if 1
-    __asm__("\n"
-"LISTLOG  RACHECK ENTITY=ENTITY,CLASS='FACILITY',ATTR=READ,LOG=NONE,    X\n\t\tMF=L\n"
-"LISTNOG  RACHECK ENTITY=ENTITY,CLASS='FACILITY',ATTR=READ,             X\n\t\tMF=L\n"
-"ENTITY   DC   CL40'THIS'\n"
-    );
+__asm__("\n"
+        "LISTLOG  RACHECK ENTITY=ENTITY,CLASS='FACILITY',ATTR=READ,LOG=NONE,   "
+        " X\n\t\tMF=L\n"
+        "LISTNOG  RACHECK ENTITY=ENTITY,CLASS='FACILITY',ATTR=READ,            "
+        " X\n\t\tMF=L\n"
+        "ENTITY   DC   CL40'THIS'\n");
 #endif
