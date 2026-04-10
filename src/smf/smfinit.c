@@ -1,9 +1,9 @@
-/* @@smfini.c
+/* smfinit.c
 ** smf_init() - fill standard 18-byte SMF record header.
 ** Caller must bzero() the record before calling.
 **
 ** Sets: reclen, rectype, segdesc=0, sysiflags=2,
-**       time (1/100s since midnight from localtime),
+**       time (1/100s since midnight via localtime),
 **       date (packed decimal 0YYDDDF from localtime),
 **       sysid (from __smfid()).
 */

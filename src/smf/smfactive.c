@@ -1,4 +1,4 @@
-/* @@smfact.c
+/* smfactive.c
 ** smf_active() - check if SMF recording is active.
 ** Returns: 1=active, 0=inactive or SMCA not found
 */

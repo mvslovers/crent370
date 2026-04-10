@@ -1,4 +1,4 @@
-/* @@smfwrt.c
+/* smfwrite.c
 ** smf_write() - write SMF record via SVC 83.
 ** Handles TESTAUTH + MODESET internally (same pattern as racf_login).
 ** Returns: 0=success, non-zero=error (SVC 83 R15 or -1 if SMF inactive)
