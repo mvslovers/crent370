@@ -15,6 +15,7 @@ c_dirs = [
   "src/jes",
   "src/os",
   "src/racf",
+  "src/smf",
   "src/thdmgr",
   "src/time64",
 ]
