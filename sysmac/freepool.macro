@@ -1,0 +1,22 @@
+         MACRO                                                          00020000
+&NAME    FREEPOOL &PAR,&DUMMY=                                          00040017
+.*         RELEASE 23 DELETIONS/CHANGES                                 00050021
+.*         RELEASE 22 DELETIONS/CHANGES                                 00052021
+.*         RELEASE 21 DELETIONS/CHANGES                                 00054021
+.*    001800-002800                                                     00056021
+         AIF   ('&PAR' EQ '').E1                                        00060000
+&NAME    IHBINNRA &PAR                                                  00080000
+         L     15,20(0,1)              LOAD BUFCB ADDRESS               00100000
+         OI    23(1),1                 INDICATE NO BUFCB ADDR           00150000
+         SR    14,14                   CLEAR REGISTER                   00200000
+         IC    14,5(0,15)              COMPUTE SIZE                     00250000
+         MH    14,6(0,15)              TO BE FREED                      00300000
+         LA    0,8(0,14)               ACCOUNT FOR BCB                  00350000
+         TM    4(15),X'40'             IS BUFCB 16 BYTES       @ZA19719 00400000
+         BNO   *+8                     BRANCH IF BUFCB = 8 BYTES        00430000
+         LA    0,16(0,14)              ADJUST SIZE PLUS 16              00460000
+         LA    1,0(0,15)               LOAD AREA ADDRESS                00550000
+         SVC   10                      ISSUE FREEMAIN SVC               00600000
+         MEXIT                                                          00650000
+.E1      IHBERMAC 01                                                    00700000
+         MEND                                                           00750000

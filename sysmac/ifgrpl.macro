@@ -1,0 +1,819 @@
+*%GOTO   RPLBSL1 ;                                                      00060037
+* /*                                                                    00062037
+         MACRO                                                          00064037
+         IFGRPL &DSECT=YES,&AM=                                         00066037
+         AGO   .RPLDESC                                                 00068037
+*                                                                   */  00068437
+.RPLDESC ANOP                                                       */  00120037
+* /******************************************************************/  00130037
+* /*                                                                */  00140037
+* /*     REQUEST PARAMETER LIST (RPL)                               */  00142037
+* /*                                                                */  00144037
+* /*     THE RPL CONTAINS USER REQUEST AND ERROR PASSBACK           */  00194037
+* /*     INFORMATION.  IT IS USED BY VSAM AND VTAM, OR WHEN THE     */  00244037
+* /*     JOB ENTRY SUBSYSTEM(JES) IS BEING USED IN VS1, TO          */  00294037
+* /*     MAINTAIN INFORMATION REQUIRED BY THE GET AND PUT MACROS.   */  00296037
+* /*                                                                */  00298037
+* /*     THE RPL IS CREATED WITH INFORMATION SUPPLIED BY THE        */  00300037
+* /*     USER IN THE RPL MACRO AND IS ACCESSED BY THE REQUEST       */  00304037
+* /*     PROCESSING ROUTINES THROUGH REGISTER 1.                    */  00314037
+* /*                                                                */  00350037
+* /*     THE CONTROL BLOCK CONSISTS OF AN AREA COMMON TO ALL USERS  */  00352037
+* /*     AND AN APPENDED VSAM EXTENSION. THE VSAM EXTENSION @ZA34940*/  00356037
+* /*     MACRO INVOKES THE VTAM RPL EXTENSION, ISTRPLEX, IF @ZA34940*/  00356637
+* /*     'AM=VTAM' IS CODED IN THE RPL MACRO.               @ZA34940*/  00357237
+* /*                                                                */  00358437
+* /*     COPYRIGHT = NONE                                           */  00358837
+* /*                                                                */  00359837
+* /*     STATUS = MVS VERSION 037                                   */  00360837
+* /*                                                                */  00361837
+* /*     CHANGE LEVEL = 12                                  @ZA34940*/  00362837
+* /*                                                                */  00364837
+* /*     DATE OF LAST CHANGE = 13  NOV  78  ( 78*317 )      @ZA34940*/  00366837
+* /*                           22  FEB  79  ( 79*053 )      @ZA37315*/  00369837
+* /*                                                                */  00374037
+* /*     CHANGE ACTIVITY                                            */  00375037
+* /*   C41509-41513,80331-80373,97681-97685,129426-129427   @XM08790*/  00376037
+* /*   C83580,D83560,83564,83584,131064,131065              @XM07756*/  00377037
+* /*   C83580,A83584,131065                                 @XM01127*/  00378037
+* /*   C83580,A83584,131065                                 @ZM30034*/  00379037
+* /*   C619200,A619210,1157610                              @ZA07549*/  00380037
+* /*   A87671,93608                                         @ZA32757*/  00390037
+* /*   CBMM SPLIT SUPPORT                                   @ZA34940*/  00391037
+* /*   VSAM SUPPORT FOR MSS ENHANCEMENT PROGRAM PRODUCT     @ZA37315*/  00391537
+* /*   C05900                                               @ZA42006*/  00392037
+* /******************************************************************/  00400037
+* /*                                                                    00410037
+         AGO   .RPLBAL                                              */  00420037
+* /*                                                                */  00430037
+* /*     RPL DIAGRAM                                                */  00440037
+* /*                                                                */  00442037
+* /*                                                                */  00450037
+* /*   0  _______________________________________________           */  00460037
+* /*     |           |           |           |           |          */  00470037
+* /*     |  RPLID    | RPLSTYP   | RPLREQ    | RPLLEN    |          */  00480037
+* /*   4 |___________|___________|___________|___________|          */  00490037
+* /*     |                                               |          */  00500037
+* /*     |                   RPLPLHPT                    |          */  00510037
+* /*   8 |_______________________________________________|          */  00520037
+* /*     |                                               |          */  00530037
+* /*     |                    RPLECB                     |          */  00540037
+* /*  12 |_______________________________________________|          */  00550037
+* /*     |                   RPLFDBWD                    |          */  00560037
+* /*     |           |          RPLFDBK                  |          */  00570037
+* /*     |  RPLSTAT  |  RPLRTNCD |      RPLCNDCD         |          */  00580037
+* /*     |  RPLFUNCD |           | RPLFDB2 |  RPLFDB3    |  @ZA42006*/  00590037
+* /*  16 |___________|___________|_________|_____________|          */  00600037
+* /*     |                       |                       |          */  00610037
+* /*     |       RPLKEYLE        |    RPLSTRID           |          */  00620037
+* /*  20 |_______________________|_______________________|          */  00630037
+* /*     |                                               |          */  00640037
+* /*     |                    RPLCCHAR                   |          */  00650037
+* /*  24 |_______________________________________________|          */  00660037
+* /*     |                                               |          */  00670037
+* /*     |                    RPLDACB                    |          */  00680037
+* /*  28 |_______________________________________________|          */  00690037
+* /*     |                                               |          */  00700037
+* /*     |                    RPLTCBPT                   |          */  00710037
+* /*  32 |_______________________________________________|          */  00720037
+* /*     |                                               |          */  00730037
+* /*     |                    RPLAREA                    |          */  00740037
+* /*  36 |_______________________________________________|          */  00750037
+* /*     |                    RPLARG                     |          */  00760037
+* /*     |        RPLSAF         |        RPLDAF         |          */  00770037
+* /*  40 |_______________________|_______________________|          */  00780037
+* /*     |                    RPLOPTCD                   |          */  00790037
+* /*     |                   RPLECB                      |          */  00800037
+* /*  44 |___________|___________|___________|___________|          */  00810037
+* /*     |                                               |          */  00820037
+* /*     |                    RPLNXTRP                   |          */  00830037
+* /*  48 |_______________________________________________|          */  00840037
+* /*     |                      RPLEXITP                 |          */  00850037
+* /*     |                    RPLRLEN                    |          */  00860037
+* /*  52 |_______________________________________________|          */  00870037
+* /*     |                                               |          */  00880037
+* /*     |                    RPLBUFL                    |          */  00890037
+* /*  56 |_______________________________________________|          */  00900037
+* /*     |                    RPLOPTC2                   |          */  00910037
+* /*     | RPLOPT5   | RPLOPT6   | RPLOPT7   | RPLOPT8   |          */  00920037
+* /*  60 |_______________________________________________|          */  00930037
+* /*     |                     RPLRBAR                   |          */  00940037
+* /*     |       RPLAIXPC        | RPLAIXID  |           |          */  00950037
+* /*     |_______________________|___________|           |          */  00960037
+* /*     |                                               |          */  00970037
+* /*     |                                               |          */  00980037
+* /*  68 |_______________________________________________|          */  00990037
+* /*     |           |           |                       |          */  01000037
+* /*     |  RPLEXTDS | RPLACTIV  |       RPLEMLEN        |          */  01010037
+* /*  72 |___________|___________|_______________________|          */  01020037
+* /*     |                                               |          */  01030037
+* /*     |                     RPLERMSA                  |          */  01040037
+* /*     |_______________________________________________|          */  01050037
+* /*                                                                */  01060037
+* /*         THE VTAM EXTENSION BEGINS AT OFFSET 76.                */  01070037
+* /*        IT IS CONTIGUOUS TO THE COMMON AREA ABOVE.              */  01080037
+* /*                                                                */  01090037
+* /*  76  _______________________________________________           */  01100037
+* /*     |                                               |          */  01110037
+* /*     |                     RPLAAREA                  |          */  01120037
+* /*  80 |_______________________________________________|          */  01130037
+* /*     |                                               |          */  01140037
+* /*     |                     RPLAARLN                  |          */  01150037
+* /*  84 |_______________________________________________|          */  01160037
+* /*     |                                               |          */  01170037
+* /*     |                     RPLARCLN                  |          */  01180037
+* /*  88 |_______________________________________________|          */  01190037
+* /*     |                 RPLFDBK2/RPLSIGDA             |          */  01200037
+* /*     |    RPLDSB/RPLSSNSI    |      RPLSSNSO         |          */  01210037
+* /*     | RPLDSB1   | RPLDSB2   | RPLESR1   | RPLESR2   |          */  01220037
+* /*  92 |_______________________________________________|          */  01230037
+* /*     |                                               |          */  01240037
+* /*     |                     RPLUSFLD                  |          */  01250037
+* /*  96 |_______________________________________________|          */  01260037
+* /*     |                    RPLOPTC3                   |          */  01270037
+* /*     | RPLOPT9   | RPLOPT10  | RPLOPT11  | RPLOPT12  |          */  01280037
+* /* 100 |_______________________________________________|          */  01290037
+* /*     |                       |                       |          */  01300037
+* /*     |        RPLSSNSO       |       RPLUSNSO        |          */  01310037
+* /* 104 |_______________________________________________|          */  01320037
+* /*     |                                               |          */  01330037
+* /*     |                   RPLSAV13                    |          */  01340037
+* /* 108 |_______________________________________________|          */  01350037
+* /*     |                                               |  @Z40BHUC*/  01354037
+* /*     |                   RPLSIGDA                    |  @Z40BHUC*/  01358037
+* /* 112 |_______________________________________________|  @Z40BHUC*/  01358837
+* /*                                                                */  01360037
+* /*     IN A VTAM RPL THE TWO WORDS BEGINNING AT OFFSET 16         */  01370037
+* /*     ARE OVERLAYED AS SHOWN BELOW.                              */  01380037
+* /*                                                                */  01390037
+* /*  16  _______________________________________________           */  01400037
+* /*     |           |           |         |             |          */  01410037
+* /*     |  RPLRH3   |  RPLSRTYP | RPLCHN  |  RPLVTFL1   |          */  01420037
+* /*  20 |___________|___________|_________|_____________|          */  01430037
+* /*     |           |                                   |          */  01440037
+* /*     | RPLVTFL2  |          RPLCNTRL                 |          */  01450037
+* /*     |___________|___________________________________|          */  01460037
+* /*                                                                */  01470037
+* /*     IN A VTAM RPL THE TWO WORDS BEGINNING AT OFFSET 60         */  01480037
+* /*     ARE OVERLAYED AS SHOW BELOW.                               */  01490037
+* /*                                                                */  01500037
+* /*  60  _______________________________________________           */  01510037
+* /*     |                       |                       |          */  01520037
+* /*     |       RPLOBSQV        |       RPLIBSQV        |          */  01530037
+* /*  64 |_______________________|_______________________|          */  01540037
+* /*     |           |           |                       |          */  01550037
+* /*     |  RPLOBSQ  |  RPLIBSQ  |       RPLSEQNO        |          */  01560037
+* /*     |___________|___________|_______________________|          */  01570037
+* /*                                                                */  01580037
+* /*                                                                */  02120037
+*%RPLBSL1: ;                                                            03400037
+*     DCL    1 IFGRPL   BASED ,             /* LEVEL ONE DECLARE    */  03450037
+*             2 RPLCOMN,                    /* RPL COMMON SECTION       03460037
+*                                                             X03004*/  03470037
+*              3 RPLIDWD     CHAR(4),       /* ID WORD OF RPL       */  03500037
+*                4 RPLID     BIT(8),        /* IDENT & HEADER TYPE  */  03550037
+*                  % RPLIDD = '''00''X';    /* RPL='00'             */  03600037
+*                4 RPLSTYP   PTR(8),        /* SUBTYPE              */  03650037
+*                  % RPLSVSAM = '''10''X';  /* VSAM SUBTYPE @X04SVHS*/  03652037
+*                  % RPLSVRP  = '''11''X';  /* VRP SUBTYPE  @X04SVHS*/  03654037
+*                  % RPLSVTAM = '''20''X';  /* VTAM SUBTYPE @X04SVHS*/  03656037
+*                  % RPLS3540 = '''40''X';  /* 3540 SUBTYPE @X04SVHS*/  03658037
+*                  % RPLCRID  = '''FF''X';  /* CRPL IDENTIFIER          03660037
+*                                                             X03004*/  03670037
+*                4 RPLREQ    PTR(8),        /* REQUEST TYPE         */  03700037
+*                  % RPLJSFMT = '''07''X';  /* JES FORMAT REQUEST       03710037
+*                                                           @X04SVHS*/  03720037
+*                  % RPLWRITE = '''11''X';  /* WRITE(VTAM)    X03004*/  03749637
+*                  % RPLRESET = '''12''X';  /* RESET(VTAM)    X03004*/  03749737
+*                  % RPLDO    = '''13''X';  /* DO(VTAM)       X03004*/  03749837
+*                  % RPLQUISE = '''15''X';  /* SETLOGON(VTAM) X03004*/  03750037
+*                  % RPLSMLGO = '''16''X';  /* SIMLOGON(VTAM) X03004*/  03766637
+*                  % RPLOPNDS = '''17''X';  /* OPNDST(VTAM)   X03004*/  03776637
+*                  % RPLCHNG  = '''19''X';  /* CHANGE(VTAM)   X03004*/  03780637
+*                  % RPLINQIR = '''1A''X';  /* INQUIRE(VTAM)  X03004*/  03782637
+*                  % RPLINTPT = '''1B''X';  /* INTERPRET(VTAM)X03004*/  03783037
+*                  % RPLREAD  = '''1D''X';  /* READ(VTAM)     X03004*/  03785537
+*                  % RPLSLICT = '''1E''X';  /* SOLICIT(VTAM)  X03004*/  03787537
+*                  % RPLCLOSE = '''1F''X';  /* CLSDST(VTAM)   X03004*/  03787937
+*                  % RPLCLACB = '''21''X';  /* CLOSEACB(VTAM) X03004*/  03788337
+*                  % RPLSNDCD = '''22''X';  /* SEND(VTAM)    X3004BS*/  03790337
+*                  % RPLRCVCD = '''23''X';  /* RECEIVE(VTAM) X3004BS*/  03790737
+*                  % RPLRSRCD = '''24''X';  /* RESETSR(VTAM) X3004BS*/  03808937
+*                  % RPLSSCCD = '''25''X';  /* SESSIONC(VTAM)X3004BS*/  03818937
+*                  % RPLSDCMD = '''27''X';  /* SENDCMD(VTAM) @Z40BHUC*/ 03821537
+*                  % RPLRVCMD = '''28''X';  /* RCVCMD(VTAM)  @Z40BHUC*/ 03822037
+*                  % RPLTREQS = '''29''X';  /* REQSESS(VTAM) @G40AKCM*/ 03823037
+*                  % RPLTOPNS = '''2A''X';  /* OPNSEC(VTAM)  @G40AKCM*/ 03823837
+*                  % RPLTCLSS = '''2B''X';  /* CLSSEC(VTAM)  @G40AKCM*/ 03824637
+*                  % RPLTRMS  = '''2C''X';  /* TRMSESS(VTAM) @G40AKCM*/ 03825437
+*                4 RPLLEN    PTR(8),        /* LENGTH OF THIS BLOCK */  03827237
+*                  5 RPLLEN2 PTR(8),        /* LENGTH OF THIS BLOCK     03845437
+*                                                             X03004*/  03863637
+*              3 RPLPLHPT    PTR(31),       /* PTR TO PLACEHOLDER   */  03881837
+*              3 RPLECB      PTR(31),       /* EXTERNAL ECB PTR OR      03900037
+*                                              INTERNAL ECB         */  03910037
+*                  5 RPLWAIT BIT(1),        /* EVENT WAITED ON      */  03950037
+*                  5 RPLPOST BIT(1),        /* EVENT COMPLETE       */  04000037
+*              3 RPLFDBWD    PTR(31),       /* FEEDBACK WORD@X04SVHS*/  04002037
+*                4 RPLSTAT   BIT(8),        /* CURRENT RPL STATUS   */  04010037
+*                  5 RPLFUNCD BIT(8),       /* PROBLEM DETERMINATION    04023337
+*                                              FUNCTION CD  @ZA42006*/  04036637
+*                4 RPLFDBK   PTR(24),       /* FEEDBACK AREA        */  04050037
+*                  5 RPLRTNCD  PTR(8),      /* RPL RETURN CODE      */  04100037
+*                   % RPLNOERR = '''00''X'; /* NORMAL RETURN        */  04110037
+*                   % RPLBLKER = '''04''X'; /* INVALID CONTROL BLOCK*/  04120037
+*                   % RPLCBLKE = '''04''X'; /* CONTROL BLOCK ERROR      04124037
+*                                                             X03004*/  04126037
+*                   % RPLLOGER = '''08''X'; /* ILLOGICAL REQUEST    */  04130037
+*                   % RPLLOGIC = '''08''X'; /* LOGICAL ERROR  X03004*/  04132037
+*                   % RPLPHYER = '''0C''X'; /* PHYSICAL I/O ERROR   */  04140037
+*                   % RPLPHYSC = '''0C''X'; /* PHYSICAL CONDITION       04140437
+*                                                             X03004*/  04140537
+*                   % RPLNGRCC = '''10''X'; /* NEGATIVE CONDITIONAL     04140837
+*                                              COMMAND        X03004*/  04140937
+*                   % RPLSPECC = '''14''X'; /* TEMPORARY ERROR          04141237
+*                                                             X03004*/  04141337
+*                   % RPLCMDRT = '''18''X'; /* COMMAND RESET  X03004*/  04141637
+*                   % RPLPURGE = '''1C''X'; /* COMMAND PURGED X03004*/  04141737
+*                   % RPLVTMNA = '''20''X'; /* VTAM NOT ACTIVE          04141837
+*                                                             X03004*/  04141937
+*                   % RPLSYERR = '''24''X'; /* SYSTEM ERROR   X03004*/  04142037
+*                   % RPLDEVDC = '''28''X'; /* DEVICE DISCONNECTED      04144437
+*                                                             X03004*/  04146437
+*                  % RPLLIMEX = '''2C''X';  /* RESPONSE LIMIT           04148437
+*                                              EXCEEDED      X3004BS*/  04148837
+*                  % RPLEXRQ  = '''30''X';  /* EXCEPTION REQUEST        04149237
+*                                              RECEIVED      X3004BS*/  04149337
+*                  % RPLEXRS  = '''34''X';  /* EXCEPTION RESPONSE   */  04149437
+*                  % RPLNOIN  = '''38''X';  /* NO INPUT AVAILABLE   */  04150537
+*                  % RPLVABND = '''3C''X';  /* VTAM ENCOUNTERED ABEND   04150937
+*                                              CONDITION    @XM08790*/  04151337
+*                    6 RPLERREG PTR(8),     /* SAME AS RPLRTNCD         04152737
+*                                              RECEIVED      X3004BS*/  04153837
+*                  5 RPLCNDCD   BIT(16) BDY(BYTE), /*RPL CONDITION      04154937
+*                                                            X3004BS*/  04156037
+*                    6 RPLCMPON PTR(8),     /* COMPONENT ISSUING        04160037
+*                                              CODE(VSAM)           */  04161137
+*                      7 RPLFDB2  PTR(8),   /* REASON CODE(VTAM)        04162037
+*                                                             X03004*/  04164037
+*                        8 RPLERLK  BIT(1), /* ERROR LOCK SET X03004*/  04166037
+*                        8 RPLRVID  BIT(1), /* RVI RECEIVED   X03004*/  04168037
+*                        8 RPLATND  BIT(1), /* ATTENTION RECEIVED       04170037
+*                                                             X03004*/  04170437
+*                        8 RPLDVUNS BIT(1), /* DEVICE UNUSEABLE         04170837
+*                                                             X03004*/  04171237
+*                        8 RPLIOERR BIT(1), /* I/O ERROR - 0=INPUT/     04171637
+*                                              1=OUTPUT       X03004*/  04171737
+*                        8 RPLDLGFL BIT(1), /* DIALOG INITIATION        04171937
+*                                              FAILED         X03004*/  04172337
+*                        8 RPLCUERR BIT(1), /* CONTROL UNIT FAILURE     04172737
+*                                                             X03004*/  04172837
+*                        8 RPLSTSAV BIT(1), /* SENSE BYTES PRESENT      04172937
+*                                                             X03004*/  04173037
+*                    6 RPLERRCD PTR(8),     /* ERROR CODE(VSAM)     */  04405137
+*                      7 RPLFDB3  PTR(8),   /* DATA FLAGS(VTAM)         04405937
+*                                                            X03004 */  04406737
+*                        8 RPLUINPT  BIT(1),/* UNSOLICITED INPUT        04456737
+*                                                             X03004*/  04466737
+*                        8 RPLSV32   BIT(1),/* RESERVED       X03004*/  04468737
+*                        8 RPLREOB   BIT(1),/* END OF BLOCK   X03004*/  04470737
+*                        8 RPLREOM   BIT(1),/* END OF MESSAGE X03004*/  04472737
+*                        8 RPLREOT   BIT(1),/* END OF TRANSMISSION      04474737
+*                                                             X03004*/  04475137
+*                        8 RPLLGFRC  BIT(1),/* LOGOFF RECEIVEDX03004*/  04475537
+*                        8 RPLRLG    BIT(1),/* LEADING GRAPHICS         04475637
+*                                              RECEIVED       X03004*/  04475737
+*                        8 RPLRDSOH  BIT(1),/* START-OF-HEADER (SOH)    04475837
+*                                              RECEIVED       X03004*/  04485837
+*              3 RPLKEYLE    FIXED(15),     /* KEY LENGTH (PROC=GEN)*/  04492837
+*                4 RPLKEYL   FIXED(15),     /* SAME AS RPLKEYLE     */  04496437
+*              3 RPLSTRID    FIXED(15),     /* STRING IDENTIFIER    */  04500037
+*              3 RPLCCHAR    PTR(31),       /* CONTROL CHAR POINTER */  04850037
+*              3 RPLDACB     PTR(31),       /* DATA ACB POINTER     */  04940037
+*              3 RPLTCBPT    PTR(31),       /* TCB POINTER          */  04950037
+*              3 RPLAREA     PTR(31),       /* DATA AREA POINTER    */  05600037
+*              3 RPLARG      PTR(31),       /* SEARCH ARGUMENT PTR  */  05700037
+*                                           /* SETPRT PARMLIST PTR  */  05702037
+*                4 RPLSAF    PTR(16),       /* SOURCE ADDRESS           05710037
+*                                              FIELD          X03004*/  05712037
+*                4 RPLDAF    PTR(16),       /* DESTINATION ADDRESS      05720037
+*                                              FIELD          X03004*/  05730037
+*              3 RPLOPTCD    BIT(32),       /* OPTION CODES         */  05750037
+*                4 RPLOPT1   BIT(8),        /* OPTION BYTE 1        */  05760037
+*                  5 RPLLOC  BIT(1),        /* LOCATE MODE          */  05800037
+*                                           /* MOVE MODE IF OFF     */  05850037
+*                  5 RPLDIR  BIT(1),        /* DIRECT SEARCH ACCESS */  05900037
+*                  5 RPLSEQ  BIT(1),        /* SEQUENTIAL ACCESS    */  06000037
+*                  5 RPLSKP  BIT(1),        /* SKIP SEQ ACCESS      */  06050037
+*                  5 RPLASY  BIT(1),        /* ASYNCHRONOUS REQUEST */  06100037
+*                                           /* SYNCH IF OFF         */  06105037
+*                  5 RPLKGE  BIT(1),        /* SEARCH KEY GT/EQ     */  06110037
+*                                           /* SEARCH KEY EQ IF OFF */  06112037
+*                  5 RPLGEN  BIT(1),        /* GENERIC KEY REQUEST  */  06120037
+*                                           /* FULL KEY IF OFF      */  06130037
+*                  5 RPLECBSW BIT(1),       /* EXTERNAL ECB         */  06150037
+*                    6 RPLECBIN BIT(1),     /* SAME AS RPLECBSW         06152037
+*                                                             X03004*/  06154037
+*                4 RPLOPT2   BIT(8),        /* OPTION BYTE 2        */  06160037
+*                  5 RPLKEY  BIT(1),        /* KEYED ACCESS         */  06167037
+*                  5 RPLADR  BIT(1),        /* ACCESS BY LOCATION   */  06174037
+*                    6 RPLADD BIT(1),       /* SAME AS RPLADR       */  06176037
+*                  5 RPLCNV  BIT(1),        /* CINV ACCESS (BY RBA) */  06181037
+*                  5 RPLBWD  BIT(1),        /* FWD=0/BWD=1  @X04SVHS*/  06188037
+*                  5 RPLLRD  BIT(1),        /* ARD=0/LRD=1  @X04SVHS*/  06190037
+*                  5 RPLWAITX BIT(1),       /* SYNCH  PROCESSING        06192037
+*                                               WAIT EXIT   @ZA07549*/  06193037
+*                  5 RPLUPD  BIT(1),        /* UPDATE IF ON         */  06195037
+*                  5 RPLNSP  BIT(1),        /* NOTE STRING POSITION */  06202037
+*                4 RPLOPT3   BIT(8),        /* OPTION BYTE 3        */  06210037
+*                  5 RPLEODS BIT(1),        /* END OF USER SYSOUT   */  06850037
+*                  5 RPLSFORM BIT(1),       /* SPECIAL FORM ON          06900037
+*                                              REMOTE PRINTER       */  06950037
+*                  5 RPLBLK  BIT(1),        /* BLOCK=1,UNBLOCKED=0  */  07000037
+*                                           /* FIXED BLOCK PROCESSING   07010037
+*                                                            X04SVHS*/  07020037
+*                  5 RPLVFY  BIT(1),        /* UCS/FCB VERIFY=1     */  07050037
+*                  5 RPLFLD  BIT(1),        /* UCS FOLD=1           */  07100037
+*                  5 RPLFMT  BIT(2),        /* FORMAT TYPE          */  07150037
+*                                           /* 00=UCS LOAD          */  07200037
+*                                           /* 01=FCB LOAD          */  07250037
+*                                           /* 10=3800 PRINTER      */  07260037
+*                                           /* 11 RESERVED          */  07300037
+*                  5 RPLALIGN BIT(1),       /* 0=DO NOT ALIGN FCB       07350037
+*                                              BUFFER LOADS         */  07400037
+*                                           /* 1=ALIGN BUFFER AND       07450037
+*                                              NOTIFY OPERATOR      */  07500037
+*                4 RPLOPT4   BIT(8),        /* OPTION BYTE 4        */  07510037
+*                  5 RPLENDTR BIT(1),       /* 3800 END OF              07520037
+*                                              TRANSMISSION @Z40SVHS*/  07530037
+*                  5 RPLMKFRM BIT(1),       /* 3800 MARK FORM           07540037
+*                                                           @Z40SVHS*/  07542037
+*                  5 *        BIT(6),       /* RESERVED             */  07544037
+*              3 RPLNXTRP    PTR(31),       /* CHAIN TO NEXT RPL    */  07550037
+*                4 RPLCHAIN  PTR(31),       /* SAME AS RPLNXTRP     */  07560037
+*              3 RPLRLEN     PTR(31),       /* LENGTH OF RECORD     */  07600037
+*              3 RPLBUFL     PTR(31),       /* USER BUFFER SIZE     */  07800037
+*              3 RPLOPTC2    BIT(32),       /* VTAM OPTIONS   X03004*/  07850037
+*                4 RPLOPT5   BIT(8),        /* OPTION BYTE 5  X03004*/  07900037
+*                  5 RPLDLGIN BIT(1),       /* 1 = CS / 0 = CA          07950037
+*                                                             X03004*/  07952037
+*                  5 *        BIT(1),       /* RESERVED     @Z40BHUC*/  07960037
+*                  5 RPLPSOPT BIT(1),       /* 1 = PASS/0 = RELEASE     07970037
+*                                                             X03004*/  07970437
+*                  5 RPLWRTYP BIT(3),       /* WRITE TYPE     X03004*/  07972037
+*                    6 RPLNERAS BIT(1),     /* WRITE NO ERASE X03004*/  07980037
+*                    6 RPLEAU   BIT(1),     /* WRITE EAU      X03004*/  07990037
+*                    6 RPLERACE BIT(1),     /* WRITE WITH ERASE         07992037
+*                                                             X03004*/  07992437
+*                  5 RPLNODE  BIT(1),       /* 1=ANY/0=SPEC   X03004*/  07994037
+*                  5 RPLWROPT BIT(1),       /* 1=CONV/0=NCONV X03004*/  07996037
+*                4 RPLOPT6   BIT(8),        /* OPTION BYTE 6  X03004*/  07998037
+*                  5 RPLUNTYP BIT(3),       /* UNIT TYPE      X03004*/  07998137
+*                    6 RPLEOB   BIT(1),     /* WRITE = BLK    X03004*/  07998437
+*                    6 RPLEOM   BIT(1),     /* WRITE = LBM    X03004*/  07998837
+*                    6 RPLEOT   BIT(1),     /* WRITE = LBT    X03004*/  07999237
+*                  5 RPLCOND  BIT(1),       /* CONDITIONAL    X03004*/  07999637
+*                  5 RPLNCOND BIT(1),       /* UNCONDITIONAL  X03004*/  07999737
+*                  5 RPLLOCK  BIT(1),       /* LOCK           X03004*/  07999837
+*                  5 RPLRSV67 BIT(1),       /* RESERVED       X03004*/  07999937
+*                  5 RPLRSV68 BIT(1),       /* RESERVED       X03004*/  08016637
+*                4 RPLOPT7   BIT(8),        /* OPTION BYTE 7  X03004*/  08026637
+*                  5 RPLCNOPT BIT(3),       /* CONNECTION OPTION        08027037
+*                                                             X03004*/  08027437
+*                    6 RPLCNALL BIT(1),     /* CONALL         X03004*/  08028637
+*                    6 RPLCNANY BIT(1),     /* CONANY         X03004*/  08030637
+*                    6 RPLCNIMM BIT(1),     /* RESERVED FOR CONIMM      08032637
+*                                                             X03004*/  08032737
+*                  5 RPLQOPT  BIT(1),       /* 1 = Q / 0 = NQ X03004*/  08033037
+*                  5 RPLTPOST BIT(1),       /* RPL ALREADY UNDER PSS    08033137
+*                                                           @XM08790*/  08037337
+*                  5 RPLRLSOP BIT(1),       /* 1 = RELQ / 0 = NRELQ     08042837
+*                                                             X03004*/  08047037
+*                  5 RPLTCRNO BIT(1),       /* CLOSE IN PROCESS FOR     08051237
+*                                              PO INTERFACE @Z40BHUC*/  08053237
+*                  5 RPLRSV78 BIT(1),       /* RESERVED       X03004*/  08055437
+*                4 RPLOPT8   BIT(8),        /* OPTION BYTE 8  X03004*/  08059637
+*                  5 RPLODACQ BIT(1),       /* ACQUIRE        X03004*/  08063837
+*                  5 RPLODACP BIT(1),       /* ACCEPT         X03004*/  08068037
+*                  5 RPLODPRM BIT(1),       /* PREEMPT        X03004*/  08072237
+*                  5 RPLPEND  BIT(1),       /* PEND           X03004*/  08076437
+*                  5 RPLSESS  BIT(1),       /* SESSION        X03004*/  08080637
+*                  5 RPLACTV  BIT(1),       /* ACTIVE         X03004*/  08084837
+*                  5 RPLUNCON BIT(1),       /* UNCONDL        X03004*/  08089037
+*                  5 RPLRSV88 BIT(1),       /* RESERVED       X03004*/  08093237
+*              3 RPLRBAR     CHAR(8)        /* RBA RETURN LOCATION  */  08097437
+*                            BDY (WORD),                                08101637
+*                4 RPLAIXPC PTR(16),        /* AIX POINTER COUNT        08120037
+*                                                           @X04SVHS*/  08170037
+*                4 RPLAIXID  BIT(8),        /* AIX POINTER TYPE         08270037
+*                                                           @X04SVHS*/  08272037
+*                  5 RPLAXPKP BIT(1),       /* RBA=0/PRIME=1 @XM07761*/ 08280037
+*                  5 *        BIT(7),       /* RESERVED     @X04SVHS*/  08290037
+*                4 *         BIT(8),        /* RESERVED     @X04SVHS*/  08292037
+*                4 RPLDDDD PTR(32),         /* RELATIVE BYTE ADDRESS*/  08300037
+*              3 RPLEXTDS    BIT(8),        /* EXIT DEFINITIONS         08350037
+*                                                             X03004*/  08350137
+*                4 RPLEXTD1    BIT(8),      /* SAME AS RPLEXTDS         08350437
+*                                                             X03004*/  08350837
+*                  5 RPLEXSCH  BIT(1),      /* EXIT SCHEDULED X03004*/  08352037
+*                  5 RPLNEXIT  BIT(1),      /* NO EXIT SPECIFIED        08354037
+*                                                             X03004*/  08354437
+*                  5 RPLEXIT   BIT(1),      /* ASYNCH EXIT   @XM01127*/ 08358037
+*                  5 *         BIT(1),      /* RESERVED      @XM01127*/ 08358437
+*                  5 RPLTCRYP  BIT(1),      /* IF ON, ENCRYPTION        08358537
+*                                              FEATURE REQ   @G40AKSL*/ 08358637
+*                  5 RPLNIB    BIT(1),      /* ARG HAS NIB POINTER      08359037
+*                                              IF ON          X03004*/  08359137
+*                  5 RPLBRANC  BIT(1),      /* BRANCH ENTRY TO MACRO    08359237
+*                                              IF ON          X03004*/  08359637
+*              3 RPLACTIV    BIT(8),        /* ACTIVE INDICATOR         08360037
+*                                              FF=ACTIVE/00=INACTIVE*/  08370037
+*              3 RPLEMLEN    PTR(16),       /* ERROR MESSAGE AREA       08400037
+*                                              LENGTH               */  08450037
+*              3 RPLERMSA    PTR(31),       /* PTR TO ERR MSG AREA  */  08460037
+*                                                                       08480037
+*        %INCLUDE SYSLIB(IFGRPLVS); /* GET VSAM EXTENSION @ZA34940*/    08500037
+*                                                                       08520037
+*     DCL      RPLGET   PTR(8) CONSTANT(0); /* GET REQUEST   @X04SVHS*/ 08600837
+*     DCL      RPLPUT   PTR(8) CONSTANT(1); /* PUT REQUEST   @X04SVHS*/ 08650837
+*     DCL      RPLCHECK PTR(8) CONSTANT(2); /* CHECK REQUEST @X04SVHS*/ 08700837
+*     DCL      RPLPOINT PTR(8) CONSTANT(3); /* POINT REQUEST @X04SVHS*/ 08710837
+*     DCL      RPLENDRE PTR(8) CONSTANT(4); /* ENDREQ REQUEST@X04SVHS*/ 08720837
+*     DCL      RPLERASE PTR(8) CONSTANT(5); /* ERASE REQUEST @X04SVHS*/ 08730837
+*     DCL      RPLVERIF PTR(8) CONSTANT(6); /* VERIFY REQUEST@X04SVHS*/ 08732837
+*     DCL      RPLPFMTD PTR(8) CONSTANT(8); /* DATA PREFORMAT@X04SVHS*/ 08733237
+*     DCL      RPLPFMTI PTR(8) CONSTANT(9); /* INDEX PREFORMAT          08733337
+*                                                            @X04SVHS*/ 08733437
+*     DCL      RPLFRCIO PTR(8) CONSTANT(10); /* FORCE I/O REQUEST       08733537
+*                                                            @X04SVHS*/ 08733637
+*     DCL      RPLGETIX PTR(8) CONSTANT(11); /* GETIX REQUEST@X04SVHS*/ 08743937
+*     DCL      RPLPUTIX PTR(8) CONSTANT(12); /* PUTIX REQUEST@X04SVHS*/ 08753937
+*     DCL      RPLSRCHB PTR(8) CONSTANT(13); /* SRCHBFR REQUEST         08754037
+*                                                            @X04SVHS*/ 08754137
+*     DCL      RPLMRKB  PTR(8) CONSTANT(14); /* MRKBFR REQUEST          08761137
+*                                                            @X04SVHS*/ 08763237
+*     DCL      RPLWRTB  PTR(8) CONSTANT(15); /* WRTBFR REQUEST          08764637
+*                                                            @X04SVHS*/ 08766737
+*     DCL      RPLCNVTA PTR(8) CONSTANT(16); /* CNVTAD REQUEST          08766937
+*                                                            @ZA37315*/ 08767037
+*     DCL      RPLMNTAC PTR(8) CONSTANT(17); /* MNTACQ REQUEST          08767137
+*                                                            @ZA37315*/ 08767237
+*     DCL      RPLACQRA PTR(8) CONSTANT(18); /* ACQRANGE REQUEST        08767337
+*                                                            @ZA37315*/ 08767437
+*     DCL      RPLTERM PTR(8) CONSTANT(19);  /* TERMRPL REQUEST         08767537
+*                                                            @ZA37315*/ 08767637
+*%GOTO   RPLBSL2 ;                                                      08768137
+* /*                                                                */  08771637
+* /*                         ASSEMBLER DSECT FOR RPL                    08775137
+*                                                                       08785537
+.RPLBAL  ANOP                                                           08795937
+         AIF   ('&DSECT' EQ 'NO').RPLNODS                               08850037
+IFGRPL   DSECT                                 REQUEST PARAMETER LIST   08900037
+         AGO   .RPLDSCT                                                 08950037
+.RPLNODS ANOP                                                           09000037
+IFGRPL   DS    0D                                                       09050037
+.RPLDSCT ANOP                                                           09100037
+RPLIDWD  EQU   *                               RPL IDENTIFICATION WORD  09150037
+RPLID    DS    XL1                             RPL IDENTIFIER           09200037
+RPLIDD   EQU   X'00'                           IDENTIFIER VALUE - X'00' 09210037
+RPLSTYP  DS    XL1                             RPL SUBTYPE - SET TO     09250037
+*                                              X'00' FOR DATA           09260037
+*                                              MANAGEMENT AND X'0D'     09270037
+*                                              FOR JECS                 09280037
+RPLSVSAM EQU   X'10'                           VSAM SUBTYPE     X04SVHS 09282037
+RPLSVRP  EQU   X'11'                           VRP SUBTYPE      X04SVHS 09284037
+RPLSVTAM EQU   X'20'                           VTAM SUBTYPE     X04SVHS 09286037
+RPLS3540 EQU   X'40'                           3540 SUBTYPE     X04SVHS 09288037
+RPLCRID  EQU   X'FF'                           CRPL ID (VTAM)    X03004 09290037
+RPLREQ   DS    XL1                             RPL REQUEST TYPE         09300037
+RPLGET   EQU   X'00'                           GET                      09310037
+RPLPUT   EQU   X'01'                           PUT                      09320037
+RPLPOINT EQU   X'03'                           POINT                    09330037
+RPLERASE EQU   X'05'                           ERASE                    09340037
+RPLJSFMT EQU   X'07'                           JES FORMAT REQUEST       09341437
+*        THE FOLLOWING CODES ARE NOT STORED IN RPLREQ, BUT ARE          09344737
+*        AVAILABLE IN REGISTER 0 WHEN THE FUNCTION IS ENTERED           09346137
+*        AND STORED IN RPLREQ DURING PROCESSING OF THE FUNCTION.        09347537
+RPLCHECK EQU   X'02'                           CHECK                    09348937
+RPLENDRE EQU   X'04'                           ENDREQ                   09350337
+RPLVERIF EQU   X'06'                           VERIFY                   09351737
+RPLIMPRT EQU   X'07'                           IMPORT                   09353137
+RPLPFMTD EQU   X'08'                           DATA PREFORMAT           09354537
+RPLPFMTI EQU   X'09'                           INDEX PREFORMAT          09355937
+RPLFRCIO EQU   X'0A'                           FORCE I/O                09357337
+RPLCNVTA EQU   X'10'                           CNVTAD          @ZA37315 09358737
+RPLMNTAC EQU   X'11'                           MNTACQ(VSAM)    @ZA37315 09358937
+RPLWRITE EQU   X'11'                           WRITE(VTAM)       X03004 09359137
+RPLACQRA EQU   X'12'                           ACQRANGE(VSAM)  @ZA37315 09359337
+RPLRESET EQU   X'12'                           RESET(VTAM)       X03004 09360137
+RPLTERM  EQU   X'13'                           TERMRPL         @ZA32757 09360837
+RPLDO    EQU   X'13'                           DO(VTAM)          X03004 09361537
+RPLQUISE EQU   X'15'                           SETLOGON(VTAM)    X03004 09362937
+RPLSMLGO EQU   X'16'                           SIMLOGON(VTAM)    X03004 09364337
+RPLOPNDS EQU   X'17'                           OPNDST(VTAM)      X03004 09365737
+RPLCHNG  EQU   X'19'                           CHANGE(VTAM)      X03004 09367137
+RPLINQIR EQU   X'1A'                           INQUIRE(VTAM)     X03004 09368537
+RPLINTPT EQU   X'1B'                           INTRPRET(VTAM)    X03004 09369937
+RPLREAD  EQU   X'1D'                           READ(VTAM)        X03004 09370337
+RPLSLICT EQU   X'1E'                           SOLICIT(VTAM)     X03004 09370737
+RPLCLOSE EQU   X'1F'                           CLSDST(VTAM)      X03004 09371137
+RPLCLACB EQU   X'21'                           CLOSEACB(VTAM)    X03004 09371937
+RPLSNDCD EQU   X'22'                           SEND(VTAM)       X3004BS 09373937
+RPLRCVCD EQU   X'23'                           RECEIVE(VTAM)    X3004BS 09375937
+RPLRSRCD EQU   X'24'                           RESETSR(VTAM)    X3004BS 09377937
+RPLSSCCD EQU   X'25'                           SESSIONC(VTAM)   X3004BS 09378337
+RPLSDCMD EQU   X'27'                           SENDCMD(VTAM)   @Z40BHUC 09382537
+RPLRVCMD EQU   X'28'                           RCVCMD(VTAM)    @Z40BHUC 09383037
+RPLTREQS EQU   X'29'                           REQSESS(VTAM)   @G40AKCM 09383537
+RPLTOPNS EQU   X'2A'                           OPNSEC(VTAM)    @G40AKCM 09383937
+RPLTCLSS EQU   X'2B'                           CLSSEC(VTAM)    @G40AKCM 09384337
+RPLTRMS  EQU   X'2C'                           TRMSESS(VTAM)   @G40AKCM 09384737
+RPLLEN   DS    0XL1                            LENGTH OF THIS RPL       09385637
+RPLLEN2  DS    XL1                             ALTERNATE NAME FOR       09389237
+*                                              RPLLEN            X03004 09399237
+RPLPLHPT DS    A                               POINTER TO PLACEHOLDER   09400037
+RPLECB   DS    A                               INTERNAL ECB OR          09500037
+*                                              POINTER TO EXTERNAL ECB  09506037
+*        ECB FLAGS                                                      09520037
+RPLWAIT  EQU   X'80'                           A REQUEST HAS BEEN       09550037
+*                                              ISSUED                   09560037
+RPLPOST  EQU   X'40'                           THE REQUEST HAS          09600037
+*                                              COMPLETED                09602037
+RPLFDBWD DS    0XL4                            FEEDBACK WORD    X04SVHS 09604037
+RPLSTAT  DS    XL1                             CURRENT RPL STATUS       09610037
+RPLFUNCD EQU   RPLSTAT                       PROB DET FUNCT CD @ZA42006 09630037
+RPLFDBK  DS    0XL3                            ERROR FEEDBACK           09650037
+RPLRTNCD DS    0XL1                            RPL RETURN CODE          09700037
+RPLNOERR EQU   X'00'                           NORMAL RETURN            09710037
+RPLBLKER EQU   X'04'                           INVALID CONTROL BLOCK    09730037
+RPLCBLKE EQU   X'04'                           ALTERNATE NAME FOR       09732037
+*                                              RPLBLKER          X03004 09732437
+RPLLOGER EQU   X'08'                           ILLOGICAL REQUEST        09734037
+RPLLOGIC EQU   X'08'                           ALTERNATE NAME FOR       09740037
+*                                              RPLLOGER          X03004 09740437
+RPLPHYER EQU   X'0C'                           PHYSICAL I/O ERROR       09742037
+RPLPHYSC EQU   X'0C'                           ALTERNATE NAME FOR       09742437
+*                                              RPLPHYER          X03004 09742537
+RPLNGRCC EQU   X'10'                           A CONDITIONAL COMMAND    09742837
+*                                              WAS ISSUED BUT THE       09742937
+*                                              CONDITION WAS NOT        09743037
+*                                              MET(VTAM)         X03004 09743137
+RPLSPECC EQU   X'14'                           A TEMPORARY OUT-OF-CORE  09743237
+*                                              SITUATION EXISTS(VTAM)   09743337
+*                                                                X03004 09743437
+RPLCMDRT EQU   X'18'                           THE REQUEST WAS          09743637
+*                                              CANCELLED BY THE RESET   09743737
+*                                              COMMAND(VTAM)     X03004 09743837
+RPLPURGE EQU   X'1C'                           THE COMMAND WAS          09744037
+*                                              PURGED(VTAM)      X03004 09744937
+RPLVTMNA EQU   X'20'                           VTAM IS NOT ACTIVE(VTAM) 09747437
+*                                                                X03004 09747837
+RPLSYERR EQU   X'24'                           SYSTEM ERROR(VTAM)X03004 09748537
+RPLDEVDC EQU   X'28'                           DIAL LINE IS             09749637
+*                                              DISCONNECTED(VTAM)X03004 09750037
+RPLLIMEX EQU   X'2C'                           RESPONSE LIMIT           09750437
+*                                              EXCEEDED(VTAM)   X3004BS 09750537
+RPLEXRQ  EQU   X'30'                           EXCEPTION REQUEST        09750637
+*                                              RECEIVED(VTAM)   X3004BS 09759737
+RPLEXRS  EQU   X'34'                           EXCEPTION RESPONSE       09761737
+*                                              RECEIVED(VTAM)   X3004BS 09763737
+RPLNOIN  EQU   X'38'                           NO INPUT                 09765737
+*                                              AVAILABLE(VTAM)  X3004BS 09767737
+RPLVABND EQU   X'3C'                           VTAM ENCOUNTERED ABEND   09768137
+*                                              CONDITION       @XM08790 09768537
+RPLERREG DS    XL1                             ALTERNATE NAME FOR       09769337
+*                                              RPLRTNCD                 09778437
+RPLCNDCD DS    0XL2                            RPL CONDITION CODE       09787537
+RPLCMPON DS    0XL1                            COMPONENT ISSUING        09796637
+*                                              CODE(VSAM)               09805737
+RPLFDB2  DS    XL1                             REASON CODE(VTAM) X03004 09814837
+RPLERLK  EQU   X'80'                           ERROR LOCK SET    X03004 10052137
+RPLRVID  EQU   X'40'                           RVI RECEIVED      X03004 10054137
+RPLATND  EQU   X'20'                           ATTN RECEIVED     X03004 10056137
+RPLDVUNS EQU   X'10'                           DEVICE UNUSABLE   X03004 10058137
+RPLIOERR EQU   X'08'                           I/O ERROR TYPE- 0=INPUT/ 10060137
+*                                              1=OUTPUT          X03004 10060237
+RPLDLGFL EQU   X'04'                           DIALOG INIT FAILED       10060537
+*                                                                X03004 10060637
+RPLCUERR EQU   X'02'                           CONTROL UNIT FAILURE     10060737
+*                                                                X03004 10070737
+RPLSTSAV EQU   X'01'                           SENSE BYTES PRESENT      10110637
+*                                                                X03004 10120637
+RPLERRCD DS    0XL1                            ERROR CODE(VSAM)         10123137
+RPLFDB3  DS    XL1                             DATA FLAGS(VTAM)  X03004 10125037
+RPLUINPT EQU   X'80'                           UNSOLICITED INPUT X03004 10126937
+RPLSV32  EQU   X'40'                           RESERVED          X03004 10128837
+RPLREOB  EQU   X'20'                           END OF BLOCK      X03004 10130737
+RPLREOM  EQU   X'10'                           END OF MESSAGE    X03004 10142337
+RPLREOT  EQU   X'08'                           END OF TRANSMISSION      10153937
+*                                                                X03004 10163937
+RPLLGFRC EQU   X'04'                           LOGOFF DETECTED   X03004 10203937
+RPLRLG   EQU   X'02'                           LEADING GRAPHICS         10253937
+*                                              RECEIVED          X03004 10303937
+RPLRDSOH EQU   X'01'                           START OF HEADER (SOH)    10313937
+*                                              RECEIVED          X03004 10323937
+RPLKEYLE DS    0H                              KEY LENGTH (PROC=GEN)    10364437
+RPLKEYL  DS    H                               ALTERNATE NAME FOR       10373337
+*                                              RPLKEYLE                 10382237
+RPLSTRID DS    H                               CCW STRING IDENTIFIER    10391137
+RPLCCHAR DS    A                               POINTER TO CONTROL       10400037
+*                                              CHARACTER FOR UNIT       10420037
+*                                              RECORD DEVICES           10440037
+RPLDACB  DS    A                               POINTER TO DATA ACB      10850037
+RPLTCBPT DS    A                               POINTER TO TCB           10860037
+RPLAREA  DS    A                               POINTER TO AREA          11000037
+*                                              CONTAINING DATA RECORD   11050037
+RPLARG   DS    0A                              POINTER TO SEARCH        11100037
+*                                              ARGUMENT; POINTER TO     11102037
+*                                              RELATIVE ADDRESS FOR     11104037
+*                                              POINT OPERATION; POINTER 11106037
+*                                              TO SETPRT PARMLIST       11108037
+RPLSAF   DS    XL2                             SOURCE ADDRESS           11110037
+*                                              FIELD(VTAM)       X03004 11120037
+RPLDAF   DS    XL2                             DESTINATION ADDRESS      11130037
+*                                              FIELD(VTAM)       X03004 11142037
+RPLOPTCD DS    0BL4                            OPTION CODES             11150037
+RPLOPT1  DS    BL1                             OPTION BYTE 1            11200037
+RPLLOC   EQU   X'80'                           LOCATE MODE; MOVE MODE   11250037
+*                                              IF 0                     11260037
+RPLDIR   EQU   X'40'                           DIRECT ACCESS            11300037
+RPLSEQ   EQU   X'20'                           SEQUENTIAL ACCESS        11450037
+RPLSKP   EQU   X'10'                           SKIP SEQUENTIAL ACCESS   11470037
+RPLASY   EQU   X'08'                           ASYNCHRONOUS PROCESSING  11500037
+RPLKGE   EQU   X'04'                           SEARCH KEY GT/EQ         11509037
+RPLGEN   EQU   X'02'                           GENERIC KEY REQUEST      11518037
+RPLECBSW EQU   X'01'                           EXTERNAL ECB             11527037
+RPLECBIN EQU   X'01'                           ALTERNATE NAME FOR       11529037
+*                                              RPLECBSW          X03004 11531037
+RPLOPT2  DS    BL1                             OPTION BYTE 2            11536037
+RPLKEY   EQU   X'80'                           KEYED ACCESS             11554037
+RPLADR   EQU   X'40'                           ADDRESSED ACCESS         11563037
+RPLADD   EQU   X'40'                           ALTERNATE NAME FOR       11565037
+*                                              RPLADR                   11567037
+RPLCNV   EQU   X'20'                           CONTROL INTERVAL ACCESS  11572037
+RPLBWD   EQU   X'10'                           FWD=0/BWD=1      X04SVHS 11574037
+RPLLRD   EQU   X'08'                           ARD=0/LRD=1      X04SVHS 11576037
+RPLWAITX EQU   X'04'                           AYNCH PROC WAIT @ZA07549 11578037
+RPLUPD   EQU   X'02'                           UPDATE                   11581037
+RPLNSP   EQU   X'01'                           NOTE STRING POSITION     11590037
+RPLOPT3  DS    BL1                             OPTION BYTE 3            11950037
+RPLEODS  EQU   X'80'                           END OF USER SYSOUT       12000037
+RPLSFORM EQU   X'40'                           SPECIAL FORM ON REMOTE   12050037
+*                                              PRINTER                  12100037
+RPLBLK   EQU   X'20'                           BLOCKED UCS DATA CHECKS  12150037
+*                                              FIXED BLOCK PROCESSING   12160037
+RPLVFY   EQU   X'10'                           VERIFY UCS/FCB           12200037
+*                                              INFORMATION              12210037
+RPLFLD   EQU   X'08'                           LOAD UCS BUFFER IN       12250037
+*                                              FOLD MODE                12260037
+RPLFMT   EQU   X'02'                           FCB LOAD                 12300037
+RPLFRMT  EQU   X'06'                           UCS LOAD IF 00           12310037
+RPLALIGN EQU   X'01'                           ALIGN FCB BUFFER LOADING 12350037
+RPLOPT4  DS    BL1                             OPTCD BYTE 4             12400037
+RPLENDTR EQU   X'80'                           3800 END OF TRANSMISSION 12450037
+*                                                              @Z40SVHS 12460037
+RPLMKFRM EQU   X'40'                           3800 MARK FORM  @Z40SVHS 12470037
+RPLNXTRP DS    0A                              POINTER TO NEXT RPL      12500037
+RPLCHAIN DS    A                               ALTERNATE NAME FOR       12550037
+*                                              RPLNXTRP                 12600037
+RPLRLEN  DS    A                               LENGTH OF RECORD         12800037
+RPLBUFL  DS    A                               USER BUFFER LENGTH       12810037
+RPLOPTC2 DS    0XL4                            VTAM OPTIONS      X03004 12860037
+RPLOPT5  DS    XL1                             OPTION BYTE 5     X03004 12870037
+RPLDLGIN EQU   X'80'                           CONTINUE READING IN      12880037
+*                                              SPECIFIC TERMINAL MODE;  12882037
+*                                              IF 0, CONTINUE READING   12884037
+*                                              IN ANY TERMINAL MODE     12886037
+*                                                                X03004 12888037
+RPLSSNIN EQU   X'40'                           CONTINUE DIALOG WITH THE 12890037
+*                                              SAME TERMINAL; IF 0, END 12890437
+*                                              DIALOG WITH THAT         12890837
+*                                              TERMINAL          X03004 12891237
+RPLPSOPT EQU   X'20'                           PASS TERMINAL TO         12892037
+*                                              REQUESTING APPLICATION;  12892137
+*                                              IF 0, MAKE TERMINAL      12892237
+*                                              AVAILABLE TO ANY         12892337
+*                                              APPLICATION       X03004 12892437
+RPLNERAS EQU   X'10'                           WRITE TO 3270 BUT DO NOT 12894037
+*                                              ERASE WHAT IS CURRENTLY  12894437
+*                                              DISPLAYED         X03004 12894837
+RPLEAU   EQU   X'08'                           WRITE TO 3270 AND ERASE  12896037
+*                                              UNPROTECTED FIELDSX03004 12896437
+RPLERACE EQU   X'04'                           WRITE TO 3270 AND ERASE  12898037
+*                                              CURRENT DISPLAY   X03004 12898137
+RPLNODE  EQU   X'02'                           READ FROM ANY TERMINAL;  12898437
+*                                              IF 0, READ FROM A        12898537
+*                                              SPECIFIC TERMINAL X03004 12898637
+RPLWROPT EQU   X'01'                           CONVERSATIONAL MODE;     12898837
+*                                              IF 0, NON-CONVERSATIONAL 12898937
+*                                              MODE              X03004 12899037
+RPLOPT6  DS    XL1                             OPTION BYTE 6     X03004 12899237
+RPLEOB   EQU   X'80'                           WRITE A BLOCK OF DATA    12899637
+*                                                                X03004 12903037
+RPLEOM   EQU   X'40'                           WRITE THE LAST BLOCK     12906437
+*                                              OF A MESSAGE      X03004 12908437
+RPLEOT   EQU   X'20'                           WRITE THE LAST BLOCK     12909837
+*                                              OF THE TRANSMISSION      12911837
+*                                                                X03004 12912237
+RPLCOND  EQU   X'10'                           DO NOT STOP OPERATION    12913237
+*                                              IF STARTED (USED WITH    12915237
+*                                              RESET REQUEST)    X03004 12915637
+RPLNCOND EQU   X'08'                           STOP OPERATION           12916637
+*                                              IMMEDIATELY (USED WITH   12918637
+*                                              RESET REQUEST)    X03004 12920637
+RPLLOCK  EQU   X'04'                           RESET ERROR LOCK TO      12926637
+*                                              UNLOCKED STATUS   X03004 12927037
+RPLRSV67 EQU   X'02'                           RESERVED          X03004 12928637
+RPLRSV68 EQU   X'01'                           RESERVED          X03004 12930637
+RPLOPT7  DS    XL1                             OPTION BYTE 7     X03004 12932637
+RPLCNALL EQU   X'80'                           ALL TERMINALS IN OPNDST  12933037
+*                                              LIST MUST BE AVAILABLE   12934137
+*                                              BEFORE ANY ARE CONNECTED 12936137
+*                                                                X03004 12936537
+RPLCNANY EQU   X'40'                           CONNECT ANY ONE TERMINAL 12936637
+*                                              IN OPNDST LIST    X03004 12937037
+RPLCNIMM EQU   X'20'                           RESERVED          X03004 12937737
+RPLQOPT  EQU   X'10'                           QUEUE THE OPNDST REQUEST 12939937
+*                                              IF IT CANNOT BE          12940337
+*                                              SATISFIED IMMEDIATELY;   12940737
+*                                              IF 0, REJECT THE OPNDST  12940837
+*                                              REQUEST IF IT CANNOT BE  12940937
+*                                              SATISFIED IMMEDIATELY    12941237
+*                                                                X03004 12941637
+RPLTPOST EQU   X'08'                           RPL ALREADY UNDER PSS    12942637
+*                                                              @XM08790 12942737
+RPLRLSOP EQU   X'04'                           SCHEDULE THE RELREQ EXIT 12942937
+*                                              OF THE REQUIRED TERMINAL 12943037
+*                                              IMMEDIATELY; IF 0,       12943137
+*                                              EITHER WAIT FOR THE      12943237
+*                                              TERMINAL TO BECOME       12943637
+*                                              AVAILABLE OR REJECT THE  12943737
+*                                              REQUEST IF THE TERMINAL  12944137
+*                                              IS BUSY(DEPENDS ON THE   12944237
+*                                              SETTING OF RPLQOPT)      12944537
+*                                                                X03004 12945637
+RPLTCRNO EQU   X'02'                           CLOSE IN PROCESS FOR PO  12946037
+*                                              INTERFACE       @Z40BHUC 12946137
+RPLRSV78 EQU   X'01'                           RESERVED          X03004 12946437
+RPLOPT8  DS    XL1                             OPTION BYTE 8     X03004 12946837
+RPLODACQ EQU   X'80'                           THE APPLICATION REQUIRES 12947237
+*                                              A SPECIFIC TERMINAL      12947637
+*                                                                X03004 12948037
+RPLODACP EQU   X'40'                           THE APPLICATION WILL     12948437
+*                                              ACCEPT ANY TERMINAL      12948837
+*                                              DESIRING LOGON    X03004 12949237
+RPLODPRM EQU   X'20'                           A SPECIFIC TERMINAL IS   12949637
+*                                              TO BE PREEMPTED EVEN     12950037
+*                                              THOUGH ANOTHER           12952037
+*                                              APPLICATION IS HOLDING   12953037
+*                                              IT (TOLTEP ONLY)  X03004 12955037
+RPLPEND  EQU   X'10'                           PREEMPT THE TERMINAL     12957737
+*                                              AFTER ALL PENDING        12962037
+*                                              OPERATIONS ARE COMPLETED 12962137
+*                                              (TOLTEP ONLY)     X03004 12962237
+RPLSESS  EQU   X'08'                           PREEMPT THE TERMINAL     12962437
+*                                              AFTER COMPLETION OF THE  12964437
+*                                              CURRENT DIALOG SESSION   12966437
+*                                              (TOLTEP ONLY)     X03004 12966837
+RPLACTV  EQU   X'04'                           PREEMPT THE TERMINAL IF  12967137
+*                                              CONNECTED BUT NOT BUSY   12969137
+*                                              (TOLTEP ONLY)     X03004 12971137
+RPLUNCON EQU   X'02'                           PREEMPT THE TERMINAL     12971837
+*                                              IMMEDIATELY              12973837
+*                                              (TOLTEP ONLY)     X03004 12975837
+RPLRSV88 EQU   X'01'                           RESERVED          X03004 12976537
+RPLRBAR  DS    0CL8                            RBA RETURN LOCATION      12981237
+RPLAIXPC DS    CL2                             AIX POINTER COUNTX04SVHS 12983237
+RPLAIXID DS    XL1                             AIX POINTER TYPE X04SVHS 12997337
+RPLAXPKP EQU   X'80'                           RBA=1/PRIME=0            12999337
+         DS    XL1                             RESERVED         X04SVHS 13000037
+RPLDDDD  DS    CL4                             RETURN AREA FOR          13050037
+*                                              RELATIVE BYTE ADDRESS    13060037
+RPLEXTDS DS    0XL1                            EXIT DEFINITIONS@Z9999DT 13100037
+RPLEXTD1 DS    XL1                             ALTERNATE NAME FOR       13102037
+*                                              RPLEXTDS          X03004 13102437
+RPLEXSCH EQU   X'80'                           AN EXIT HAS BEEN         13104037
+*                                              SCHEDULED         X03004 13104137
+RPLNEXIT EQU   X'40'                           NO EXIT WAS SPECIFIED    13106037
+*                                                                X03004 13106137
+RPLEXIT  EQU   X'20'                           ASYNCH EXIT     @XM01127 13106537
+RPLTCRYP EQU   X'08'                           IF ON, ENCRYPTION        13106837
+*                                              FEATURE REQ     @G40AKSL 13107137
+RPLNIB   EQU   X'04'                           THE RPLARG FIELD         13107637
+*                                              CONTAINS A POINTER       13117637
+*                                              TO THE NIB        X03004 13119637
+RPLBRANC EQU   X'02'                           USE A BRANCH ENTRY       13124837
+*                                              TO THE MACRO      X03004 13126837
+RPLACTIV DS    XL1                             ACTIVE INDICATOR -       13141637
+*                                              X'FF' INDICATES ACTIVE;  13143637
+*                                              X'00' INDICATES INACTIVE 13145637
+*                                                                X03004 13147637
+RPLEMLEN DS    H                               LENGTH OF THE ERROR      13150037
+*                                              MESSAGE AREA             13200037
+RPLERMSA DS    A                               POINTER TO THE ERROR     13250037
+*                                              MESSAGE AREA             13260037
+         IFGRPLVS AM=&AM                       GET VSAM        @ZA34940 13320037
+*                                              EXTENSION       @ZA34940 13370037
+         MEND                                                           13420037
+*                        END OF RPL                                 */  13470037
+*%RPLBSL2: ;                                                            13520037
