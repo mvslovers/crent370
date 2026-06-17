@@ -1,0 +1,777 @@
+*  %/*                                                                  00000100
+         MACRO                                                          00000200
+&NAME   WTO    &MESG,&MF=I,&ROUTCDE=,&DESC=,&MSGTYP=,&MCSFLAG=,&QID=,&AX00000300
+               REAID=,&TEXT=¬                                           00000400
+.********************************************************************** 00000500
+.*                                                                      00000600
+.*       WTO - WRITE TO OPERATOR                                        00000700
+.*                                                                      00000800
+.*       INVOCATION - SPECIFY -  WTO MESG,ROUTCDE=,DESC=,MSGTYP=,       00000900
+.*                            MCSFLAG=,QID=,AREAID=,MF=,TEXT=           00001000
+.*              WHERE -                                                 00001100
+.*                MESG     THE MESSAGE TEXT FOR A SINGLE OR             00001200
+.*                         MULTIPLE LINE MESSAGE TO BE                  00001300
+.*                         WRITTEN                                      00001400
+.*                                                                      00001500
+.*                ROUTCDE= ROUTING CODES TO BE ASSIGNED TO THE          00001600
+.*                         MESSAGE                                      00001700
+.*                                                                      00001800
+.*                DESC=    DESCRIPTOR CODES TO BE ASSIGNED TO           00001900
+.*                         THE MESSAGE                                  00002000
+.*                                                                      00002100
+.*                MSGTYP=  SPECIFIES HOW THE MESSAGE IS TO BE           00002200
+.*                         ROUTED. VALID VALUES ARE:                    00002300
+.*                         N,Y,SESS,JOBNAMES,STATUS,ACTIVE,             00002400
+.*                         SHOW                                         00002500
+.*                                                                      00002600
+.*                MCSFLAG= SPECIFIES ATTRIBUTES OF THE                  00002700
+.*                         MESSAGE. VALID VALUES ARE:                   00002800
+.*                         REG0,RESP,REPLY,BRDCST,HRDCPY,               00002900
+.*                         QREG0,NOTIME,NOCPY                           00003000
+.*                                                                      00003100
+.*                QID=     REMOTE ENTRY SERVICES (RSS) QUEUE            00003200
+.*                         ID (OS/VS1 ONLY). PARAMETER ACCEPTED         00003300
+.*                         BUT IGNORED BY MVS                           00003400
+.*                                                                      00003500
+.*                AREAID=  SPECIFIES A DISPLAY AREA ON THE              00003600
+.*                         CONSOLE WHERE THE MESSAGE IS TO BE           00003700
+.*                         WRITTEN.                                     00003800
+.*                                                                      00003900
+.*                MF=      SPECIFIES THE TYPE OF EXPANSION              00004000
+.*                         REQUIRED. VALID VALUES ARE:                  00004100
+.*                           I,L,E                                      00004200
+.*                                                                      00004300
+.*                TEXT=    SPECIFIES A DATA AREA CONTAINING A 2         00004400
+.*                         BYTE MESSAGE LENGTH FIELD FOLLOWED BY        00004500
+.*                         THE ACTUAL MESSAGE TEXT. IF A REGISTER       00004600
+.*                         IS USED, THE REGISTER CONTAINS THE           00004700
+.*                         ADDRESS OF THE DATA AREA. IF A FIELD         00004800
+.*                         IS USED, THE ADDRESS OF THE FIELD IS         00004900
+.*                         STORED IN THE WPL. THE TEXT KEYWORD IS       00005000
+.*                         MUTUALLY EXCLUSIVE WITH INLINE               00005100
+.*                         MESSAGE TEXT. EITHER TEXT OR INLINE          00005200
+.*                         TEXT (BUT NOT BOTH) IS REQUIRED ON THE       00005300
+.*                         STANDARD OR LIST FORM OF WTO                 00005400
+.*                                                                      00005500
+.*       FUNCTION - BUILDS ONE OF THREE POSSIBLE PARAMETER LIST         00005600
+.*                  FORMATS AND/OR THE CODE WHICH WILL INVOKE           00005700
+.*                  SVC 35 TO ISSUE THE MESSAGE.                        00005800
+.*                  1. A STANDARD WPL IS BUILT IF INLINE TEXT IS        00005900
+.*                     SPECIFIED AND NO ROUTING CODE GREATER THAN 16    00006000
+.*                     IS SPECIFIED.                                    00006100
+.*                  2. IF INLINE TEXT IS SPECIFIED AND A ROUTING CODE   00006200
+.*                     GREATER THAN 16 IS SPECIFIED THEN AN EXTENDED    00006300
+.*                     WPL VERSION 1 IS BUILT.                          00006400
+.*                  3. IF THE TEXT OPERAND IS SPECIFIED THEN AN         00006500
+.*                     EXTENDED WPL VERSION 2 IS GENERATED.             00006600
+.*                                                                      00006700
+.*       STATUS -                                                       00006800
+.*       LASTUPD         = EBB1102  TYPE=ADD                            00006900
+.*       LIBRARIES       = DISTLIB=AMACLIB                              00007000
+.*       FMID            = FBB1221                                      00007100
+.*       RMID            = UZ31484                                      00007200
+.*       SYSMOD HISTORY  = SYSMOD   TYPE       DATE   MCS  STATUS       00007300
+.*                         EBB1102  FUNCTION  00.000  MAC  ACC RGN      00007400
+.*                         FBB1221  FUNCTION  00.000  MAC  ACC RGN      00007500
+.*                                                                      00007600
+.*       CHANGE ACTIVITY -                                              00007700
+.*              ZP60039  - EXTENSIVE REVISION OF THE MACRO AND          00007800
+.*                         SUPPORT FOR THE TEXT OPERAND WHICH           00007900
+.*                         REQUIRES GENERATION OF AN EXTENDED WPL       00008000
+.*                                                                      00008100
+.********************************************************************** 00008200
+         GBLB  &IHBWTL                                                  00008300
+         LCLA  &LT(256),&H,&I,&II,&N,&J,&K,&LEN,&LLCNT                  00008400
+         LCLA  &NUMENT                 NUMBER OF SUBLIST ENTRIES        00008500
+         LCLA  &LENENT                 L'ENTRY                          00008600
+         LCLB  &AD,&E,&E1,&E2,&E3,&E4,&E5,&E6,&MLW  MLWTO FLAGS         00008700
+         LCLB  &SECONDL,&PAIR                                           00008800
+         LCLC  &GNAME                                                   00008900
+         LCLB  &RO(128),&DE(16),&MC(32),&MT(16)  FLAGS FOR THE FIELDS   00009000
+         LCLC  &LOWNUM,&HIGHNUM        ROUTE RANGE NUMBERS              00009100
+         LCLB  &GENRD                  GENERATE ROUT AND DESC FIELDS    00009200
+         LCLB  &GENMT                  GENERATE MSGTYP FIELD            00009300
+         LCLB  &GENXWPL                GENERATE AN XWPL                 00009400
+         LCLA  &WPLXLEV                LEVEL OF XWPL TO GENERATE        00009500
+         LCLB  &MTY,&MTN               FLAGS FOR MSGTYP PROCESSING      00009600
+         ACTR  30000                                                    00009700
+.*                                                                      00009800
+.*       INITIALIZATION                                                 00009900
+.*                                                                      00010000
+&GNAME   SETC  'IHB'.'&SYSNDX'         FOR BAL INSTRUCTION              00010100
+&WPLXLEV SETA  1                                                        00010200
+.********************************************************************** 00010300
+.*                                                                      00010400
+.*       BEGIN PROCESSING PARAMETERS                                    00010500
+.*                                                                      00010600
+.********************************************************************** 00010700
+.********************************************************************** 00010800
+.*                                                                      00010900
+.*        PROCESS ROUTING CODES                                         00011000
+.*        DETERMINE IF ROUTING CODES HAVE BEEN SPECIFIED                00011100
+.*                                                                      00011200
+.*        ROUTING CODES 1-128 MAY BE SET HOWEVER FOR MVS 3.8 ONLY       00011300
+.*        ONLY ROUTING CODES 1-16 WILL BE ACTIONED                      00011400
+.*        ANY ROUTING CODE GREATER THAN 16 WILL BE IGNORED              00011500
+.*        WITHOUT ERROR HOWEVER SPECIFYING A ROUTING CODE GREATER       00011600
+.*        THAN 16 WILL CAUSE THE GENERATION OF AN EXTENDED FORMAT       00011700
+.*        VERSION 1 WPL (XWPL).                                         00011800
+.*                                                                      00011900
+.********************************************************************** 00012000
+         AIF   (T'&ROUTCDE EQ 'O').ENDROUT   ROUTING CODES APECIFIED ?  00012100
+&GENRD   SETB  1                    ROUTING CODES PRESENT               00012200
+&I       SETA  1                    INITIALIZE LIST INDEX               00012300
+&NUMENT  SETA  N'&ROUTCDE           TOTAL NUMBER OF ENTRIES IN &ROUTCDE 00012400
+.*       ROUTING CODE LOOP                                              00012500
+.ROULOOP ANOP                                                           00012600
+&LENENT  SETA  K'&ROUTCDE(&I)       SET L'CURRENT ELEMENT               00012700
+         AIF   (&LENENT EQ 0).BADENT  NULL ENTRY, ERROR                 00012800
+         AIF   (T'&ROUTCDE(&I) EQ 'N').ROUVAL   SINGLE NUMERIC VALUE    00012900
+.*                                                                      00013000
+.*       RANGE OF ROUTING CODES HAS BEEN SPECIFIED                      00013100
+.*                                                                      00013200
+.*       SCAN FOR DASH SEPERATOR                                        00013300
+.*                                                                      00013400
+&II      SETA  1                    INITIALIZE ELEMENT INDEX            00013500
+.DASHL   ANOP                       DASH SCANNING LOOP                  00013600
+         AIF   ('&ROUTCDE(&I)'(&II,1) EQ '-').DASHFND                   00013700
+&II      SETA  &II+1                INCREMENT ELEMENT INDEX             00013800
+         AIF   (&II GE &LENENT).BADRANG   CHECK INDEX POSITION          00013900
+         AGO   .DASHL               LOOP AROUND FOR NEXT CHAR           00014000
+.*       FOUND A DASH SEPERATOR                                         00014100
+.DASHFND ANOP                                                           00014200
+         AIF   (&II EQ 1).BADRANG         DASH UP FRONT ? ERROR         00014300
+         AIF   (&II EQ &LENENT).BADRANG   DASH AT THE END ? ERROR       00014400
+&LOWNUM  SETC  '&ROUTCDE(&I)'(1,&II-1) SET FIRST NUMBER OF RANGE        00014500
+&HIGHNUM SETC  '&ROUTCDE(&I)'(&II+1,&LENENT-&II) SET SECOND NUMBER      00014600
+.*       FIRST NUMBER > LAST NUMBER ? ERROR                             00014700
+         AIF   ('&LOWNUM' GT '&HIGHNUM').BADRANG                        00014800
+.*       OUTSIDE THE RANGE OF VALID ROUTING CODES ? ERROR               00014900
+         AIF   ('&LOWNUM' LT '1' OR '&LOWNUM' GT '128' OR              X00015000
+               '&HIGHNUM' LT '1' OR '&HIGHNUM' GT '128').BADRANG        00015100
+&J       SETA  &LOWNUM              INITIALIZE START OF RANGE           00015200
+&K       SETA  &HIGHNUM             INITIALIZE END OF RANGE             00015300
+.*       LOOP TO SET ON ROUTING CODES                                   00015400
+.*       IF ALREADY SET ON THEN ERROR                                   00015500
+.RANLOOP ANOP                                                           00015600
+         AIF   (&RO(&J)).BADRANG                                        00015700
+&RO(&J)  SETB  1                    SET ROUTING CODE &J ON              00015800
+         AIF   (&J LT 17).RANLOPA                                       00015900
+&GENXWPL SETB  1                    ANY VALUE > 16 FORCES A XWPL        00016000
+.RANLOPA ANOP                                                           00016100
+&J       SETA  &J+1                 INCREMENT LOOP INDEX                00016200
+         AIF   (&J LE &K).RANLOOP   LOOP THROUGH RANGE                  00016300
+.*       RANGE PROCESSED                                                00016400
+         AGO   .NEXTROU             DETERMINE NEXT ROUTING CODE         00016500
+.*                                                                      00016600
+.*       ROUTING CODE VALUE HAS BEEN SPECIFIED. VERIFY THAT IT IS       00016700
+.*       WITHIN THE PROPER RANGE AND, IF SO, SET THE CORRECT BIT        00016800
+.*                                                                      00016900
+.ROUVAL  ANOP                                                           00017000
+&J       SETA  &ROUTCDE(&I)         GET NEXT ROUTING CODE VALUE         00017100
+         AIF   (&J GE 1 AND &J LE 128).ROUOK   VALID VALUE ?            00017200
+         MNOTE 4,'ROUTCDE &J IS AN INVALID ROUTING CODE'                00017300
+         AGO   .NEXTROU                                                 00017400
+.ROUOK   ANOP                       VALID ROUTING CODE SPECIFIED        00017500
+         AIF   (&RO(&J)).BADRANG                                        00017600
+&RO(&J)  SETB  1                    SET ROUTING CODE &J ON              00017700
+         AIF   (&J LT 17).NEXTROU                                       00017800
+&GENXWPL SETB  1                    ANY VALUE > 16 FORCES A XWPL        00017900
+&MC(12)  SETB  1                    SET MCS FLAG FOR XWPL (WPLMCSFL)    00018000
+         AGO   .NEXTROU             LOOP TO NEXT VALUE                  00018100
+.*       A NULL ROUTING CODE HAS BEEN SPECIFIED                         00018200
+.*       ISSUE AN MNOTE AND SKIP TO THE NEXT ROUTING CODE               00018300
+.BADENT  ANOP                                                           00018400
+         MNOTE 4,'NULL ROUTING CODE SPECIFIED'                          00018500
+         AGO   .NEXTROU                                                 00018600
+.*       AN INVALID ROUTING CODE RANGE HAS BEEN SPECIFIED               00018700
+.*       ISSUE AN MNOTE AND SKIP TO THE NEXT ROUTING CODE               00018800
+.BADRANG ANOP                                                           00018900
+         MNOTE 4,'INVALID RANGE OF ROUTING CODES IGNORED.'              00019000
+.*       FALL THROUGH TO SETUP FOR NEXT VALUE                           00019100
+.*                                                                      00019200
+.*       SETUP TO PROCESS NEXT ROUTE CODE ENTRY                         00019300
+.NEXTROU ANOP                                                           00019400
+&I       SETA  &I+1                 INCREMENT INDEX TO ROUT CODE VALUES 00019500
+         AIF   (&I LE &NUMENT).ROULOOP IF MORE CODES, CHECK NEXT ONE    00019600
+.ENDROUT ANOP                       DONE WITH ROUTING CODES             00019700
+.********************************************************************** 00019800
+.*                                                                      00019900
+.*        PROCESS DESCRIPTOR CODES                                      00020000
+.*        DETERMINE IF DESCRIPTOR CODES HAVE BEEN SPECIFIED             00020100
+.*                                                                      00020200
+.********************************************************************** 00020300
+         AIF   (T'&DESC EQ 'O').ENDDESC   NO DESCRIPTOR, BRANCH         00020400
+&GENRD   SETB  1                 FORCE GENERATION OF DESC AND ROUTCDES  00020500
+&NUMENT  SETA  N'&DESC           NUMBER OF ENTRIES                      00020600
+&I       SETA  1                                                        00020700
+&J       SETA  0                 COUNTER TO DETECT MUTUALLY EXCL VALUE  00020800
+.DESCLOP ANOP                                                           00020900
+&II      SETA  &DESC(&I)                                                00021000
+         AIF   (&II GE 1 AND &II LE 16).DESCOK                          00021100
+.DESCERR MNOTE 8,'DESC &N IS INVALID DESCRIPTOR - IGNORED'              00021200
+         AGO   .NEXTDES                                                 00021300
+.DESCOK  ANOP                                                           00021400
+         AIF   (&DE(&II)).DESERR            ALREADY SPECIFIED           00021500
+         AIF   (&II GT 6).DESCJMP                                       00021600
+&J       SETA  &J+1                         A VALUE LOWER THAN 7 SPEC   00021700
+.DESCJMP ANOP                                                           00021800
+&DE(&II) SETB  1                                                        00021900
+.NEXTDES ANOP                                                           00022000
+&I       SETA  &I+1                         INCR ENTRY COUNTER          00022100
+         AIF   (&I LE &NUMENT).DESCLOP      PROCESS NEXT ENTRY          00022200
+.*       ALL ENTRIES PROCESSED                                          00022300
+.*       TEST FOR ANY MUTUALLY EXCLUSIVE ENTRIES                        00022400
+         AIF   (&J LT 2).ENDDESC            ALL OK                      00022500
+         MNOTE 8,'DESC MUTUALLY EXCLUSIVE VALUE SPECIFIED'              00022600
+         MEXIT                                                          00022700
+.DESERR  MNOTE 8,'DUPLICATE DESCRIPTOR VALUE SPECIFIED'                 00022800
+         MEXIT                                                          00022900
+.ENDDESC ANOP                                                           00023000
+.********************************************************************** 00023100
+.*                                                                      00023200
+.*       PROCESS MSGTYP PARAMETERS                                      00023300
+.*       DETERMINE IF MSGTYP PARAMETERS HAVE BEEN SPECIFIED             00023400
+.*       PARAMETERS -                                                   00023500
+.*       Y        - GENERATES MSGTYP FIELD BUT IGNORES OTHER            00023600
+.*                  PARAMETERS (ALL MSGTYP FLAGS ZERO)                  00023700
+.*                  THIS MUST BE THE FIRST PARAMETER                    00023800
+.*       N        - SUPPESSSES THE GENERATION OF THE MSGTYP             00023900
+.*                  FIELD EVEN THOUGH OTHER PARAMETERS HAVE BEEN        00024000
+.*                  SPECIFIED                                           00024100
+.*                  THIS MUST BE THE FIRST PARAMETER                    00024200
+.*       JOBNAMES -                                                     00024300
+.*       STATUS   -                                                     00024400
+.*       ACTIVE   -                                                     00024500
+.*       SHOW     - FOR VS/1 CRJE SUPPORT                               00024600
+.*       SESS     -                                                     00024700
+.*       NOTE THAT THE MSGTYP FIELD WILL BE GENERATED AND THE           00024800
+.*       WPLMSGTD FLAG WILL BE SET IF THE QID PARAMETER IS              00024900
+.*       CODED ON THE WTO MACRO                                         00025000
+.*                                                                      00025100
+.********************************************************************** 00025200
+         AIF   (T'&MSGTYP EQ 'O').ENDMSGT   MSGTYP PARAMS SPECIFIED ?   00025300
+.*                                          YES, USE OF MSGTYPE FORCES  00025400
+&GENRD   SETB  1                            GENERATION OF ROUT/DESC     00025500
+&NUMENT  SETA  N'&MSGTYP                    NUMBER OF ENTRIES           00025600
+         AIF   ('&MSGTYP(1)' NE 'N').MSGL1                              00025700
+&MTN     SETB  1                            MSGTYP=N CODED              00025800
+         AGO   .MSGL2                                                   00025900
+.MSGL1   AIF   ('&MSGTYP(1)' NE 'Y').MSGL3  MSGTYP=Y CODED              00026000
+&MTY     SETB  1                                                        00026100
+.MSGL2   ANOP                               EITHER MSGTYP =Y/N CODED    00026200
+&I       SETA  1                            FIRST PARAMETER PROCESSED   00026300
+         AGO   .NEXTMSG                                                 00026400
+.MSGL3   ANOP                                                           00026500
+&I       SETA  0                                                        00026600
+         AGO   .NEXTMSG                                                 00026700
+.MSGTLOP ANOP                               LOOP THROUGH PARAMETERS     00026800
+         AIF   ('&MSGTYP(&I)' NE 'JOBNAMES').MSGL4                      00026900
+         AIF   (&MT(1)).MTERR               JOBNAMES ALREADY CODED ?    00027000
+&MT(1)   SETB  1                            TURN ON JOBNAMES            00027100
+         AGO   .NEXTMSG                                                 00027200
+.MSGL4   ANOP                                                           00027300
+         AIF   ('&MSGTYP(&I)' NE 'STATUS').MSGL5                        00027400
+         AIF   (&MT(2)).MTERR               STATUS ALREADY CODED ?      00027500
+&MT(2)   SETB  1                            TURN ON STATUS              00027600
+         AGO   .NEXTMSG                                                 00027700
+.MSGL5   ANOP                                                           00027800
+         AIF   ('&MSGTYP(&I)' NE 'ACTIVE').MSGL6                        00027900
+         AIF   (&MT(3)).MTERR               ACTIVE ALREADY CODED ?      00028000
+&MT(3)   SETB  1                            TURN ON ACTIVE              00028100
+         AGO   .NEXTMSG                                                 00028200
+.MSGL6   ANOP                                                           00028300
+         AIF   ('&MSGTYP(&I)' NE 'SHOW').MSGL7                          00028400
+         AIF   (&MT(5)).MTERR               SHOW ALREADY CODED ?        00028500
+&MT(5)   SETB  1                            TURN ON SHOW                00028600
+         AGO   .NEXTMSG                                                 00028700
+.MSGL7   ANOP                                                           00028800
+         AIF   ('&MSGTYP(&I)' NE 'SESS').MTERR                          00028900
+         AIF   (&MT(6)).MTERR               SESS ALREADY CODED ?        00029000
+&MT(6)   SETB  1                            TURN ON SESS                00029100
+.NEXTMSG ANOP                                                           00029200
+&GENMT   SETB  1                            GENERATE MSGTYP FIELD       00029300
+&I       SETA  &I+1                         INCR ENTRY COUNTER          00029400
+         AIF   (&I LE &NUMENT).MSGTLOP      PROCESS NEXT ENTRY          00029500
+.*       ALL ENTRIES PROCESSED                                          00029600
+.*       PROCESS FLAGS                                                  00029700
+&GENMT   SETB  (NOT &MTN)                   SUPRESS MT GEN IF MSGTYP=N  00029800
+         AIF   (&MTN OR &MTY).MSGL8                                     00029900
+         AGO   .ENDMSGT                                                 00030000
+.*       ERROR PROCESSING                                               00030100
+.MTERR   MNOTE 8,'MESSAGE TYPE FIELD INVALID - N IS ASSUMED'            00030200
+&MTN     SETB  1                                                        00030300
+&MTY     SETB  0                                                        00030400
+.MSGL8   ANOP                               TURN OFF ALL FLAGS          00030500
+&MT(1)   SETB  0                                                        00030600
+&MT(2)   SETB  0                                                        00030700
+&MT(3)   SETB  0                                                        00030800
+&MT(5)   SETB  0                                                        00030900
+&MT(6)   SETB  0                                                        00031000
+.ENDMSGT ANOP                                                           00031100
+.********************************************************************** 00031200
+.*                                                                      00031300
+.*       PROCESS MCSFLAG PARAMETERS                                     00031400
+.*       DETERMINE IF MCSFLAG PARAMETERS HAVE BEEN SPECIFIED            00031500
+.*       PARAMETERS -                                                   00031600
+.*       REG0     - MSG TO CONSOLE WITH SOURCE ID IN R0                 00031700
+.*       RESP     - WTO IS IMMEDIATE COMMAND RESPONSE                   00031800
+.*       REPLY    - WTO IS A REPLY TO A WTOR                            00031900
+.*       BRDCAST  - MSG TO BE BROADCAST TO ALL ACTIVE CONSOLES          00032000
+.*       HRDCOPY  - MSG TO BE QUEUED FOR HARDCOPY ONLY                  00032100
+.*       QREG0    - MSG TO BE QUEUED UNCONDITIONALLY TO CON ID IN R0    00032200
+.*       NOTIME   - TIME IS NOT TO BE APPENDED TO MSG  TER              00032300
+.*       NOCPY    - IF WTO OR WTOR IS ISSUED IN SUPERVISOR STATE        00032400
+.*                  THEN DO NOT QUEUE FOR HARDCOPY                      00032500
+.*                                                                      00032600
+.********************************************************************** 00032700
+         AIF   (T'&MCSFLAG EQ 'O').ENDMCS    MCSFLAG PARAMS SPECIFIED ? 00032800
+&I       SETA  1                    SET LIST INDEX                      00032900
+&NUMENT  SETA  N'&MCSFLAG           NUMBER OF ENTRIES                   00033000
+.MCLOOP  ANOP                       START LOOP THROUGH PARAMETERS       00033100
+         AIF   ('&MCSFLAG(&I)' NE 'REG0').MCL1                          00033200
+         AIF   (&MC(2)).MCERR       REG0 ALREADY CODED ?                00033300
+&MC(2)   SETB  1                    TURN ON REG0 (WPLMCSFB)             00033400
+         AGO   .NEXTMC                                                  00033500
+.MCL1    ANOP                                                           00033600
+         AIF   ('&MCSFLAG(&I)' NE 'RESP').MCL2                          00033700
+         AIF   (&MC(3)).MCERR       RESP ALREADY CODED ?                00033800
+&MC(3)   SETB  1                    TURN ON RESP (WPLMCSFC)             00033900
+         AGO   .NEXTMC                                                  00034000
+.MCL2    ANOP                                                           00034100
+         AIF   ('&MCSFLAG(&I)' NE 'REPLY').MCL3                         00034200
+         AIF   (&MC(5)).MCERR       REPLYG0 ALREADY CODED ?             00034300
+&MC(5)   SETB  1                    TURN ON REPLY (WPLMCSFE)            00034400
+         AGO   .NEXTMC                                                  00034500
+.MCL3    ANOP                                                           00034600
+         AIF   ('&MCSFLAG(&I)' NE 'BRDCAST').MCL4                       00034700
+         AIF   (&MC(6)).MCERR       BRDCAST ALREADY CODED ?             00034800
+&MC(6)   SETB  1                    TURN ON BRDCAST (WPLMCSFF)          00034900
+         AGO   .NEXTMC                                                  00035000
+.MCL4    ANOP                                                           00035100
+         AIF   ('&MCSFLAG(&I)' NE 'HRDCPY').MCL5                        00035200
+         AIF   (&MC(7)).MCERR       HRDCPY ALREADY CODED ?              00035300
+&MC(7)   SETB  1                    TURN ON HRDCPY (WPLMCSFG)           00035400
+         AGO   .NEXTMC                                                  00035500
+.MCL5    ANOP                                                           00035600
+         AIF   ('&MCSFLAG(&I)' NE 'QREG0').MCL6                         00035700
+         AIF   (&MC(8)).MCERR       QREG0 ALREADY CODED ?               00035800
+&MC(8)   SETB  1                    TURN ON QREG0 (WPLMCSFH)            00035900
+         AGO   .NEXTMC                                                  00036000
+.MCL6    ANOP                                                           00036100
+         AIF   ('&MCSFLAG(&I)' NE 'NOTIME').MCL7                        00036200
+         AIF   (&MC(9)).MCERR       NOTIME ALREADY CODED ?              00036300
+&MC(9)   SETB  1                    TURN ON NOTIME (WPLMCSFI)           00036400
+         AGO   .NEXTMC                                                  00036500
+.MCL7    ANOP                                                           00036600
+         AIF   ('&MCSFLAG(&I)' NE 'NOCPY').MCERR                        00036700
+         AIF   (&MC(14)).MCERR      NOTIME ALREADY CODED ?              00036800
+&MC(14)  SETB  1                    TURN ON NOTTIME (WPLMCSFN)          00036900
+         AGO   .NEXTMC                                                  00037000
+.MCERR   ANOP                                                           00037100
+         MNOTE 8,'&MCSFLAG(&I) IS INVALID - IGNORED'                    00037200
+.NEXTMC  ANOP                       INCR ENTRY INDEX                    00037300
+&I       SETA  &I+1                                                     00037400
+         AIF   (&I LE &NUMENT).MCLOOP                                   00037500
+.*       TEST FOR ERRORS                                                00037600
+         AIF   (&MC(7) AND &MC(14)).MCEXCL    HRDCOPY AND NOCPY ?       00037700
+         AGO   .ENDMCS                                                  00037800
+.MCEXCL  MNOTE 8,'HRDCPY AND NOCPY MUTUALLY EXCLUSIVE, HRDCPY ASSUMED'  00037900
+&MC(14)  SETB  0                      TURN OFF NOCPY                    00038000
+.ENDMCS  ANOP                                                           00038100
+.********************************************************************** 00038200
+.*                                                                      00038300
+.*       ALL PARAMETERS EXCEPT MESSAGE TEXT AND MF HAVE BEEN PROCESSED  00038400
+.*       PROCESS ANY PARAMETER INTERACTIONS                             00038500
+.*                                                                      00038600
+.********************************************************************** 00038700
+.*       DETERMINE IF A DEFAULT ROUTING CODE OF 2 HAS TO BE SET         00038800
+.*                                                                      00038900
+.*       IF THE GENERATION OF ROUTING AND DESCRIPTOR CODES FLAG         00039000
+.*       HAS BEEN SET HOWEVER NO ROUTING AND DESCRIPTOR CODES           00039100
+.*       HAVE BEEN PROVIDED THEN SET ROUTING CODE 2 AS A DEFAULT        00039200
+         AIF   ((&GENRD) AND (T'&ROUTCDE EQ 'O')).INT1A                 00039300
+         AIF   (NOT &GENMT).INT1    NO MSGTYP, BRANCH                   00039400
+         AIF   (&MC(2) OR &MC(8)).INT1   MCS REG0 OR QREG0 CODED ?      00039500
+.INT1A   ANOP                                                           00039600
+.*       SET A DEFAULT ROUTING CODE OF 2                                00039700
+&GENRD   SETB  1                                                        00039800
+&RO(2)   SETB  1                                                        00039900
+.INT1    ANOP                                                           00040000
+.*       QID FORCES GENERATION OF DESC AND ROUTE FIELDS                 00040100
+&GENRD   SETB  (&GENRD OR (T'&QID NE 'O'))                              00040200
+.*       DETERMINE IF THE MCS FLAG FOR ROUT/DESC PRESENT SHOULD BE ON   00040300
+&MC(1)   SETB  (&GENRD)                                                 00040400
+.*       DETERMINE IF MCS FLAG FOR MSGTYP PRESENT SHOULD BE ON          00040500
+&MC(4)   SETB  (&GENMT)                                                 00040600
+.********************************************************************** 00040700
+.*                                                                      00040800
+.*       DETERMINE SOURCE OF TEXT FOR MESSAGE                           00040900
+.*                                                                      00041000
+.********************************************************************** 00041100
+.*       MESSAGE TEXT AND INLINE TEXT ARE MUTUALLY EXCLUSIVE            00041200
+.*       ISSUE ERROR MESSAGE IF CODED EXCEPT IF MF=E                    00041300
+         AIF   (('&MESG' NE '') AND ('&TEXT' NE '¬')).INT2              00041400
+         AGO   .INT3                                                    00041500
+.INT2    MNOTE 12,'''TEXT'' AND INLINE TEXT ARE MUTUALLY EXCLUSIVE'     00041600
+         AGO   .END                                                     00041700
+.*       EITHER MESG OR TEXT MUST BE SPECIFIED UNLESS MF=E              00041800
+.INT3    AIF   ('&MF(1)' EQ 'E').INT5                                   00041900
+         AIF   (('&MESG' EQ '') AND ('&TEXT' EQ '¬')).INT4              00042000
+         AGO   .INT5                                                    00042100
+.INT4    MNOTE 12,'NO MESSAGE TEXT OR TEXT PARAMETER SPECIFIED'         00042200
+         AGO   .END                                                     00042300
+.INT5    ANOP                                                           00042400
+.*       USE OF TEXT= PARAMETER FORCES GENERATION OF TYPE 2 XWPL        00042500
+         AIF   ('&TEXT' EQ '¬').INT6                                    00042600
+&GENXWPL SETB  1                       GENERATE AN XWPL                 00042700
+&WPLXLEV SETA  2                       LEVEL OF XWPL TO GENERATE        00042800
+&MC(12)  SETB  1                       SET MCS FLAG FOR XWPL (WPLMCSFL) 00042900
+&MC(25)  SETB  1                       TEXT ADDR SPECIFIED (WPXTXTAD)   00043000
+.INT6    ANOP                                                           00043100
+.********************************************************************** 00043200
+.*                                                                      00043300
+.*       PROCESS MF PARAMETER                                           00043400
+.*                                                                      00043500
+.********************************************************************** 00043600
+         AIF    ('&MF' EQ 'I' OR '&MF' EQ 'L').WPLGEN                   00043700
+.*                                                                      00043800
+.*       MF=(E,X) PROCESSING                                            00043900
+.*                                                                      00044000
+         AIF   ('&MF(1)' NE 'E').ERROR1                                 00044100
+         AIF   (N'&MF NE 2).ERROR1                                      00044200
+&NAME    IHBINNRA &MF(2)            GENERATE INITIAL LR OR LA IF NEEDED 00044300
+         AIF   (&IHBWTL).END                                            00044400
+         AIF   (NOT &GENXWPL).MFESVC                                    00044500
+.*       UPDATE MCS FLAGS                                               00044600
+         OI    2(1),B'&MC(1)&MC(2)&MC(3)&MC(4)&MC(5)&MC(6)&MC(7)&MC(8)'X00044700
+                                        MCS FLAGS                       00044800
+         OI    3(1),B'&MC(9)&MC(10)&MC(11)&MC(12)&MC(13)&MC(14)&MC(15)&X00044900
+               MC(16)'                  MCS FLAGS                       00045000
+.*       ANY NEED TO UPDATE ADDITIONAL WPLX FIELDS ?                    00045100
+         AIF   ((NOT &GENRD) AND (NOT &GENMT) AND (NOT &MC(25))).MFESVC 00045200
+         AIF   ('&TEXT' EQ '¬').MFE1                                    00045300
+         AIF   ('&TEXT'(1,1) EQ '(').MFE2   TEXT=REG ?                  00045400
+         LA    15,&TEXT                 R15 -> TEXT                     00045500
+         ST    15,4(,1)                 STORE TEXT ADDR INTO XWPL       00045600
+         AGO   .MFE1                                                    00045700
+.MFE2    ST    &TEXT(1),4(,1)           STORE TEXT ADDR INTO XWPL       00045800
+.MFE1    ANOP                                                           00045900
+         LA    14,0(,1)                                                 00046000
+         AH    14,0(,14)            ADD L'TEXT + LEN FIELD + MCS FIELD  00046100
+         AIF   ('&TEXT' EQ '¬').MFE3    NEED TO SET EXTENDED MCS ?      00046200
+         OI    4(14),B'&MC(17)&MC(18)&MC(19)&MC(20)&MC(21)&MC(22)&MC(23X00046300
+               )&MC(24)'                EXTENDED MCS                    00046400
+         OI    5(14),B'&MC(25)&MC(26)&MC(27)&MC(28)&MC(29)&MC(30)&MC(31X00046500
+               )&MC(32)'                EXTENDED MCS                    00046600
+.MFE3    AIF   (NOT &GENRD).MFE4        NEED TO GEN ROUTE/DESC ?        00046700
+         MVI   20(14),B'&DE(1)&DE(2)&DE(3)&DE(4)&DE(5)&DE(6)&DE(7)&DE(8X00046800
+               )'                       DESCRIPTOR CODES                00046900
+         MVI   21(14),B'&DE(9)&DE(10)&DE(11)&DE(12)&DE(13)&DE(14)&DE(15X00047000
+               )&DE(16)'                DESCRIPTOR CODES                00047100
+         MVI   24(14),B'&RO(1)&RO(2)&RO(3)&RO(4)&RO(5)&RO(6)&RO(7)&RO(8X00047200
+               )'                       ROUTING CODES                   00047300
+         MVI   25(14),B'&RO(9)&RO(10)&RO(11)&RO(12)&RO(13)&RO(14)&RO(15X00047400
+               )&RO(16)'                ROUTING CODES                   00047500
+.MFE4    AIF   (NOT &GENMT).MFESVC      NEED TO GEN MSGTYP FLAGS ?      00047600
+         MVI   40(14),B'&MT(1)&MT(2)&MT(3)&MT(4)&MT(5)&MT(6)&MT(7)&MT(8X00047700
+               )'                       MSGTYP                          00047800
+         MVI   41(14),B'&MT(9)&MT(10)&MT(11)&MT(12)&MT(13)&MT(14)&MT(15X00047900
+               )&MT(16)'                MSGTYP                          00048000
+.MFESVC  ANOP                                                           00048100
+         SVC   35                                                       00048200
+         AGO   .END                 EXIT MACRO, PROCESSING COMPLETE     00048300
+.*                                                                      00048400
+.*       MF=I AND MF=L PROCESSING                                       00048500
+.*                                                                      00048600
+.WPLGEN  ANOP                                                           00048700
+.*       TEXT FOR PRESENCE OF INLINE TEXT                               00048800
+         AIF   (((N'&SYSLIST EQ 0) OR (N'&SYSLIST GT 255)) AND         X00048900
+               ('&TEXT' EQ '¬')).NOTXT                                  00049000
+         AIF   ('&MF' EQ 'L').DCNAME                                    00049100
+.*       MF=I PROCESSING                                                00049200
+         CNOP  0,4                                                      00049300
+&NAME    BAL   1,&GNAME.A                                               00049400
+         AGO   .MESCHK                                                  00049500
+.DCNAME  ANOP                                                           00049600
+&NAME    DC    0F'0'                                                    00049700
+.MESCHK  ANOP                                                           00049800
+         AIF   (&GENXWPL).XWPL01         GENERATE XWPL                  00049900
+         AIF   ('&MESG' EQ '').NOTXT     TEXT SPECIFIED ? NO, ERROR     00050000
+.*       TEST FOR MULTI-LINE WTO                                        00050100
+&MLW     SETB  ((N'&SYSLIST NE 1) OR (N'&SYSLIST(1) NE 1))              00050200
+&MC(10)  SETB  (&MLW)                    SET MLWTO IF APPROPRIATE       00050300
+         AIF   (NOT &MLW).HDCYOK                                        00050400
+         AIF   (NOT &MC(7)).HDCYOK                                      00050500
+         IHBERMAC 248           MCSFLAG=HRDCPY INVALID FOR MLWTO        00050600
+&GNAME.A DS    0H                                                       00050700
+         MEXIT                  TERMINATE MACRO                         00050800
+.HDCYOK  ANOP                                                           00050900
+.GENDCS  AIF   (NOT &MLW).NOTMLW1  GENERATE REGULAR WTO                 00051000
+.********************************************************************** 00051100
+.*                                                                      00051200
+.*       SETUP TO GENERATE MLWTO                                        00051300
+.*                                                                      00051400
+.********************************************************************** 00051500
+.*                                                                      00051600
+.*       SET LINETYPE                                                   00051700
+.*                                                                      00051800
+&H       SETA  1                                                        00051900
+         AIF   ('&SYSLIST(1,1)' EQ '').MLW04                            00052000
+         AIF   (N'&SYSLIST(1) GT 2).MLW05                               00052100
+         AIF   ('&SYSLIST(1,2)' NE 'C').MLW02                           00052200
+&LT(1)   SETA  80                                                       00052300
+.MLW01   AIF   (N'&SYSLIST LE &H).MLW11                                 00052400
+&H       SETA  &H+1                                                     00052500
+         AIF   (N'&SYSLIST(&H) GT 2).MLW05                              00052600
+.MLW02   AIF   ('&SYSLIST(&H,2)' NE 'L' OR '&SYSLIST(&H,1)' EQ '').MLW0X00052700
+               4                                                        00052800
+&LT(&H)  SETA  40                                                       00052900
+         AIF   (&SECONDL).MLW03                                         00053000
+&SECONDL SETB  1                                                        00053100
+         AGO   .MLW01                                                   00053200
+.MLW03   AIF   (N'&SYSLIST LE &H).MLW11                                 00053300
+&H       SETA  &H+1                                                     00053400
+         AIF   (N'&SYSLIST(&H) GT 2).MLW05                              00053500
+.MLW04   AIF   ('&SYSLIST(&H,2)' EQ 'E').MLW06                          00053600
+         AIF   ('&SYSLIST(&H,1)' EQ '').MLW05                           00053700
+         AIF   ('&SYSLIST(&H,2)' EQ 'DE').MLW08                         00053800
+         AIF   ('&SYSLIST(&H,2)' EQ 'L' OR '&SYSLIST(&H,2)' EQ 'C').MLWX00053900
+               09                                                       00054000
+         AIF   ('&SYSLIST(&H,2)' NE 'D' AND '&SYSLIST(&H,2)' NE '').MLW*00054100
+               10                                                       00054200
+&LT(&H)  SETA  20                                                       00054300
+         AGO   .MLW03                                                   00054400
+.MLW05   ANOP                                                           00054500
+&E5      SETB  1                                                        00054600
+&LT(&H)  SETA  10                                                       00054700
+         AGO   .MLW11                                                   00054800
+.MLW06   ANOP                                                           00054900
+&LT(&H)  SETA  10                                                       00055000
+.MLW07   ANOP                                                           00055100
+&E4      SETB  (&H NE N'&SYSLIST)                                       00055200
+         AGO   .MLW11                                                   00055300
+.MLW08   ANOP                                                           00055400
+&LT(&H)  SETA  30                                                       00055500
+         AGO   .MLW07                                                   00055600
+.MLW09   ANOP                                                           00055700
+&E3      SETB  1                                                        00055800
+&LT(&H)  SETA  30                                                       00055900
+         AGO   .MLW11                                                   00056000
+.MLW10   ANOP                                                           00056100
+&E5      SETB  1                                                        00056200
+&LT(&H)  SETA  30                                                       00056300
+.MLW11   ANOP                                                           00056400
+&LLCNT   SETA  &H                                                       00056500
+&H       SETA  1                                                        00056600
+.********************************************************************** 00056700
+.*                                                                      00056800
+.*       GENERATE START OF WPL                                          00056900
+.*                                                                      00057000
+.********************************************************************** 00057100
+.NOTMLW1 ANOP                                                           00057200
+&I       SETA  1                                                        00057300
+&LEN     SETA  K'&SYSLIST(1,1)-2                                        00057400
+&PAIR    SETB  0                                                        00057500
+.QLOOP1  ANOP                                                           00057600
+&I       SETA  &I+1+&PAIR                                               00057700
+         AIF   (&I GE K'&SYSLIST(1,1)).QDONE1                           00057800
+&PAIR    SETB  ('&SYSLIST(1,1)'(&I,2) EQ '''''' OR '&SYSLIST(1,1)'(&I,2X00057900
+               ) EQ '&&')                                               00058000
+&LEN     SETA  &LEN-&PAIR                                               00058100
+         AGO   .QLOOP1                                                  00058200
+.QDONE1  ANOP                                                           00058300
+&AD      SETB  (&LT(1) NE 10)      0 IF E-TYPE LINE, 1 IF NOT           00058400
+&LEN     SETA  4+&LEN*&AD                                               00058500
+         DC    AL2(&LEN)               TEXT LENGTH                      00058600
+         DC    B'&MC(1)&MC(2)&MC(3)&MC(4)&MC(5)&MC(6)&MC(7)&MC(8)&MC(9)X00058700
+               &MC(10)&MC(11)&MC(12)&MC(13)&MC(14)&MC(15)&MC(16)'      X00058800
+                                       MCS FLAGS                        00058900
+         AIF   (&LEN EQ 4).SKIPDC                                       00059000
+         DC    C&SYSLIST(1,1)          MESSAGE TEXT                     00059100
+.SKIPDC  AIF   (NOT &GENRD).OLDEXIT    GENERATING ROUT/DESC/MSGTYP ?    00059200
+         DC    B'&DE(1)&DE(2)&DE(3)&DE(4)&DE(5)&DE(6)&DE(7)&DE(8)&DE(9)X00059300
+               &DE(10)&DE(11)&DE(12)&DE(13)&DE(14)&DE(15)&DE(16)'      X00059400
+                                       DESCRIPTOR CODES                 00059500
+         DC    B'&RO(1)&RO(2)&RO(3)&RO(4)&RO(5)&RO(6)&RO(7)&RO(8)&RO(9)X00059600
+               &RO(10)&RO(11)&RO(12)&RO(13)&RO(14)&RO(15)&RO(16)'      X00059700
+                                       ROUTING CODES                    00059800
+         AIF   (NOT &GENMT).OLDEXIT    GENERATING MSGTYP ?              00059900
+         DC    B'&MT(1)&MT(2)&MT(3)&MT(4)&MT(5)&MT(6)&MT(7)&MT(8)&MT(9)X00060000
+               &MT(10)&MT(11)&MT(12)&MT(13)&MT(14)&MT(15)&MT(16)'      X00060100
+                                       MSGTYP                           00060200
+.OLDEXIT AIF   (NOT &MLW).NOTMLW2                                       00060300
+.********************************************************************** 00060400
+.*                                                                      00060500
+.*       GENERATE MLWTO FIELDS                                          00060600
+.*                                                                      00060700
+.********************************************************************** 00060800
+         DC    XL2'&LT(1)00'           LINE TYPE                        00060900
+         AIF   ('&AREAID' EQ '').ID0                                    00061000
+         DC    CL1'&AREAID'            AREA ID                          00061100
+         AGO   .IDA                                                     00061200
+.ID0     DC    X'00'                   NULL AREA ID                     00061300
+.IDA     ANOP                                                           00061400
+         DC    AL1(&LLCNT)             TOTAL NUMBER OF LINES            00061500
+.MLW12   AIF   (&H GE &LLCNT).MLW14                                     00061600
+&H       SETA  &H+1                                                     00061700
+&I       SETA  1                                                        00061800
+&LEN     SETA  K'&SYSLIST(&H,1)-2                                       00061900
+&PAIR    SETB  0                                                        00062000
+.QLOOPH  ANOP                                                           00062100
+&I       SETA  &I+1+&PAIR                                               00062200
+         AIF   (&I GE K'&SYSLIST(&H,1)).QDONEH                          00062300
+&PAIR    SETB  ('&SYSLIST(&H,1)'(&I,2) EQ '''''' OR '&SYSLIST(&H,1)'(&IX00062400
+               ,2) EQ '&&')                                             00062500
+&LEN     SETA  &LEN-&PAIR                                               00062600
+         AGO   .QLOOPH                                                  00062700
+.QDONEH  ANOP                                                           00062800
+&AD      SETB  (&LT(&H) NE 10)     0 IF E-TYPE LINE, 1 IF NOT           00062900
+&LEN     SETA  4+&LEN*&AD                                               00063000
+         DC    AL2(&LEN)               LENGTH                           00063100
+         DC    XL2'&LT(&H)00'          LINE TYPE                        00063200
+         AIF   (&LEN EQ 4).MLW12                                        00063300
+         DC    C&SYSLIST(&H,1)                                          00063400
+         AGO   .MLW12                                                   00063500
+.MLW14   AIF   (NOT &E4).MLW15                                          00063600
+         IHBERMAC 242         GEN TERMINATED BY E OR DE LINE TYPE       00063700
+.MLW15   AIF   (NOT &E5).MLW17                                          00063800
+         IHBERMAC 243                                                   00063900
+.MLW17   AIF   (NOT &E3).NOTMLW2                                        00064000
+         IHBERMAC 244                                                   00064100
+.NOTMLW2 AIF   ('&MF' NE 'I').END                                       00064200
+&GNAME.A DS    0H                                                       00064300
+.NOTMLW3 ANOP                                                           00064400
+         AIF   (&E6 OR &E3 OR &IHBWTL).END                              00064500
+         SVC   035                                                      00064600
+         MEXIT                                                          00064700
+.********************************************************************** 00064800
+.*                                                                      00064900
+.*       GENERATE XWPL                                                  00065000
+.*                                                                      00065100
+.********************************************************************** 00065200
+.XWPL01  ANOP                                                           00065300
+         AIF   ('&TEXT' NE '¬').XWPL04     HAVE MESSAGE TEXT TO PROCESS 00065400
+&I       SETA  1                                                        00065500
+&LEN     SETA  K'&SYSLIST(1,1)-2    L'TEXT                              00065600
+&PAIR    SETB  0                                                        00065700
+.*       LOOP THROUGH TEXT STRING AND PROCESS DUPLICATE QUOTES          00065800
+.*       AND AMPERSANDS                                                 00065900
+.XWPL02  ANOP                                                           00066000
+&I       SETA  &I+1+&PAIR                                               00066100
+         AIF   (&I GE K'&SYSLIST(1,1)).XWPL03   GOTO LOOP EXIT          00066200
+&PAIR    SETB  ('&SYSLIST(1,1)'(&I,2) EQ '''''' OR '&SYSLIST(1,1)'(&I,2X00066300
+               ) EQ '&&')                                               00066400
+&LEN     SETA  &LEN-&PAIR                                               00066500
+         AGO   .XWPL02                 EXIT FROM LOOP                   00066600
+.*       GENERATE XWPL FIELDS                                           00066700
+.XWPL03  ANOP                                                           00066800
+.*       GENERATE TEXT XWPL VERSION 1                                   00066900
+&LEN     SETA  4+&LEN                                                   00067000
+         AIF   (&LEN EQ 4).NOTXT                                        00067100
+         DC    AL2(&LEN)                TEXT LENGTH                     00067200
+         DC    B'&MC(1)&MC(2)&MC(3)&MC(4)&MC(5)&MC(6)&MC(7)&MC(8)&MC(9)X00067300
+               &MC(10)&MC(11)&MC(12)&MC(13)&MC(14)&MC(15)&MC(16)'      X00067400
+                                        MCS FLAGS                       00067500
+         DC    C&SYSLIST(1,1)           MESSAGE TEXT                    00067600
+         DC    AL1(1)                   XWPL VERSION LEVEL              00067700
+         AGO   .XWPL05                                                  00067800
+.*       GENERATE TEXT ADDR XWPL VERSION 2                              00067900
+.XWPL04  ANOP                                                           00068000
+         DC    AL2(8)                   TEXT LENGTH                     00068100
+         DC    B'&MC(1)&MC(2)&MC(3)&MC(4)&MC(5)&MC(6)&MC(7)&MC(8)&MC(9)X00068200
+               &MC(10)&MC(11)&MC(12)&MC(13)&MC(14)&MC(15)&MC(16)'      X00068300
+                                        MCS FLAGS                       00068400
+         DC    AL4(0)                   ADDR OF MESSAGE TEXT            00068500
+         DC    AL1(2)                   XWPL VERSION LEVEL              00068600
+.*       GENERATE FIELDS COMMON TO XWPL VER 1 AND XWPL VER 2            00068700
+.XWPL05  ANOP                                                           00068800
+         DC    B'00000000'              MISCELLANEOUS FLAGS             00068900
+         DC    AL1(0)                   L'REPLY FOR WTOR                00069000
+         AIF   (&WPLXLEV EQ 2).XWPL06   DETERMINE LEVEL OF XWPL         00069100
+.*       XWPL LENGTH VALUE FOR XWPL VERSION 1                           00069200
+         DC    AL1(0)                   RESERVED                        00069300
+         AGO   .XWPL07                                                  00069400
+.*       XWPL LENGTH VALUE FOR XWPL VERSION 2                           00069500
+.XWPL06  ANOP                                                           00069600
+         DC    AL1(104)                 LENGTH OF XWPL VERSION 2        00069700
+.XWPL07  ANOP                                                           00069800
+.*       GENERATE EXTENDED MCS FLAGS                                    00069900
+         DC    B'&MC(17)&MC(18)&MC(19)&MC(20)&MC(21)&MC(22)&MC(23)&MC(2X00070000
+               4)&MC(25)&MC(26)&MC(27)&MC(28)&MC(29)&MC(30)&MC(31)&MC(3X00070100
+               2)'                      EXTENDED MCS FLGS               00070200
+         DC    XL2'0000'                MCS FLAGS FOR CNTL PROGRAM USE  00070300
+         DC    AL4(0)                   ADDR OF REPLY BUFFER FOR WTOR   00070400
+         DC    AL4(0)                   ADDR OF REPLY ECB FOR WTOR      00070500
+         DC    AL4(0)                   RESERVED - CONNECT ID           00070600
+         DC    B'&DE(1)&DE(2)&DE(3)&DE(4)&DE(5)&DE(6)&DE(7)&DE(8)&DE(9)X00070700
+               &DE(10)&DE(11)&DE(12)&DE(13)&DE(14)&DE(15)&DE(16)'      X00070800
+                                        DESCRIPTOR CODES                00070900
+         DC    AL2(0)                   RESERVED                        00071000
+         DC    B'&RO(1)&RO(2)&RO(3)&RO(4)&RO(5)&RO(6)&RO(7)&RO(8)&RO(9)X00071100
+               &RO(10)&RO(11)&RO(12)&RO(13)&RO(14)&RO(15)&RO(16)'      X00071200
+                                        EXTENDED ROUTING CODES          00071300
+         DC    B'&RO(17)&RO(18)&RO(19)&RO(20)&RO(21)&RO(22)&RO(23)&RO(2X00071400
+               4)&RO(25)&RO(26)&RO(27)&RO(28)&RO(29)&RO(30)&RO(31)&RO(3X00071500
+               2)'                                                      00071600
+         DC    B'&RO(33)&RO(34)&RO(35)&RO(36)&RO(37)&RO(38)&RO(39)&RO(4X00071700
+               0)&RO(41)&RO(42)&RO(43)&RO(44)&RO(45)&RO(46)&RO(47)&RO(4X00071800
+               8)'                                                      00071900
+         DC    B'&RO(49)&RO(50)&RO(51)&RO(52)&RO(53)&RO(54)&RO(55)&RO(5X00072000
+               6)&RO(57)&RO(58)&RO(59)&RO(60)&RO(61)&RO(62)&RO(63)&RO(6X00072100
+               4)'                                                      00072200
+         DC    B'&RO(65)&RO(66)&RO(67)&RO(68)&RO(69)&RO(70)&RO(71)&RO(7X00072300
+               2)&RO(73)&RO(74)&RO(75)&RO(76)&RO(77)&RO(78)&RO(79)&RO(8X00072400
+               0)'                                                      00072500
+         DC    B'&RO(81)&RO(82)&RO(83)&RO(84)&RO(85)&RO(86)&RO(87)&RO(8X00072600
+               8)&RO(89)&RO(90)&RO(91)&RO(92)&RO(93)&RO(94)&RO(95)&RO(9X00072700
+               6)'                                                      00072800
+         DC    B'&RO(97)&RO(98)&RO(99)&RO(100)&RO(101)&RO(102)&RO(103)&X00072900
+               RO(104)&RO(105)&RO(106)&RO(107)&RO(108)&RO(109)&RO(110)&X00073000
+               RO(111)&RO(112)'                                         00073100
+         DC    B'&RO(113)&RO(114)&RO(115)&RO(116)&RO(117)&RO(118)&RO(11X00073200
+               9)&RO(120)&RO(121)&RO(122)&RO(123)&RO(124)&RO(125)&RO(12X00073300
+               6)&RO(127)&RO(128)'                                      00073400
+.*                                                                      00073500
+         DC    B'&MT(1)&MT(2)&MT(3)&MT(4)&MT(5)&MT(6)&MT(7)&MT(8)&MT(9)X00073600
+               &MT(10)&MT(11)&MT(12)&MT(13)&MT(14)&MT(15)&MT(16)'      X00073700
+                                        MSGTYPE                         00073800
+         DC    AL2(0)                   MESSAGE PRIORITY                00073900
+         DC    CL8'        '            JOB ID                          00074000
+         DC    CL8'        '            JOB NAME                        00074100
+         DC    CL8'        '            RETRIEVAL KEY                   00074200
+         DC    AL4(0)                   TOKEN FOR DOM                   00074300
+         DC    AL4(0)                   CONSOLE ID                      00074400
+         DC    CL8'        '            SYSTEM NAME                     00074500
+         AIF   (&WPLXLEV EQ 1).XWPL08   BRANCH TO GENERATE XWPL VER 1   00074600
+         DC    CL8'        '            CONSOLE NAME                    00074700
+         DC    AL4(0)                   REPLY CONSOLE NAME/ID ADDR      00074800
+         DC    AL4(0)                   CART ADDRESS                    00074900
+         DC    AL4(0)                   WSPARM ADDRESS                  00075000
+         AIF   ('&MF' EQ 'L').NOTMLW2                                   00075100
+.*       STORE ADDR OF TEXT INTO XWPL (VERSION 2 XWPL ONLY)             00075200
+.*       GENERATE LABEL FOR BAL BRANCH                                  00075300
+&GNAME.A DS    0H                                                       00075400
+         AIF   ('&TEXT' EQ '¬').NOTMLW3  SHOULD NOT HAPPEN              00075500
+         AIF   ('&TEXT'(1,1) EQ '(').XWPL10   TEXT=(REG) ?              00075600
+         LA    15,&TEXT                 R15 -> TEXT                     00075700
+         ST    15,4(,1)                 STORE TEXT ADDR INTO XWPL       00075800
+         AGO   .NOTMLW3                                                 00075900
+.XWPL10  ANOP                                                           00076000
+         ST    &TEXT(1),4(,1)           STORE TEXT ADDR INTO XWPL       00076100
+         AGO   .NOTMLW3                                                 00076200
+.*       XWPL VERSION 1 FIELDS                                          00076300
+.XWPL08  ANOP                                                           00076400
+         DC    AL4(0)                   RESERVED                        00076500
+         DC    AL4(0)                   RESERVED                        00076600
+         AGO   .NOTMLW2                                                 00076700
+.********************************************************************** 00076800
+.*       ISSUE ERROR MESSAGE - 12,INVALID MF OPERAND SPECIFIED-MF       00076900
+.********************************************************************** 00077000
+         IHBERMAC 35,,&MF                                               00077100
+.ERROR1  ANOP                                                           00077200
+         MEXIT                                                          00077300
+.NOTXT   ANOP                                                           00077400
+         MNOTE 12,'NUMBER OF LINES REQUESTED IS 0 OR GREATER THAN 255 -X00077500
+                GENERATION TERMINATED'                                  00077600
+.END     MEND                                                           00077700
