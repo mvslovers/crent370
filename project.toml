@@ -56,3 +56,6 @@ local_dir = "maclib/"
 
 [system]
 maclibs = ["SYS1.HASPSRC"]
+
+[release]
+version_files = ["VERSION"]
