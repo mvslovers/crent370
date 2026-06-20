@@ -164,4 +164,11 @@ extern int __dsalcf(char *ddname, const char *opts, ...);
 /* __dsfree() deallocate ddname */
 extern int __dsfree(const char *ddname);   /* input dd name                    */
 
+/* __renmem() rename PDS member oldmem to newmem in dsn via STOW change.
+ * Returns 0 on success, a positive STOW return code (8=old not found,
+ * 4=new already exists, ...), or a negative value for allocation/open
+ * failures.  Unlike rename(), which uses IDCAMS ALTER on a cataloged data
+ * set, this renames a member of a partitioned data set. */
+extern int __renmem(const char *dsn, const char *oldmem, const char *newmem);
+
 #endif

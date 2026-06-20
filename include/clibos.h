@@ -51,6 +51,11 @@ struct bldl {
 /* __bldl() search for member in dcb or default link libraries when dcb is NULL */
 int __bldl(BLDL *bldl, void *dcb);
 
+/* __stow() maintain a PDS directory entry via STOW on an open DSORG=PO DCB.
+ * func is 'A' add, 'R' replace, 'D' delete or 'C' change (rename).
+ * Returns the STOW return code (0 on success) or -1 for an unknown function. */
+int __stow(void *dcb, void *area, int func);
+
 /* __cs() compare and swap in new_value to memory, returns old_value */
 unsigned __cs(void *mem, unsigned new_value);
 
